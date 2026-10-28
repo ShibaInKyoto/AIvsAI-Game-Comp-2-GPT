@@ -23,6 +23,7 @@ func mat(hex: String, metal := 0.0, emission := 0.0) -> StandardMaterial3D:
 		return materials[key]
 	var result := StandardMaterial3D.new()
 	result.albedo_color = Color(hex)
+	result.resource_name = "Palette_" + hex
 	result.metallic = metal
 	result.roughness = 0.6
 	if hex in ["3c3337", "352c30", "30282d"]:
@@ -94,6 +95,7 @@ func generate(seed_value: int) -> void:
 	var teal := mat("244c50")
 	for car in range(COUNT):
 		var group := Node3D.new()
+		group.name = NAMES[car].to_pascal_case()
 		group.position.z = -car * LENGTH
 		add_child(group)
 		cars.append(group)
@@ -124,7 +126,8 @@ func generate(seed_value: int) -> void:
 				block(Vector3(side * 3.42, 1.95, sz), Vector3(0.17, 1.45, 0.12), brass)
 				block(Vector3(side * 3.36, 0.62, sz), Vector3(0.05, 0.9, 2.6), wood)
 				block(Vector3(side * 3.32, 0.62, sz), Vector3(0.04, 0.76, 2.4), teal)
-				block(Vector3(side * 3.30, 2.6, sz + 1.25), Vector3(0.3, 1.6, 0.24), velvet)
+				for pleat in range(5):
+					cylinder(Vector3(side * 3.30, 2.6, sz + 1.1 + pleat * 0.075), 0.055, 1.6, velvet)
 				block(Vector3(side * 3.3, 2.0, sz + 1.25), Vector3(0.32, 0.055, 0.27), brass)
 			for section in range(3):
 				var sz := z - 6 + section * 6
@@ -161,6 +164,7 @@ func generate(seed_value: int) -> void:
 	block(Vector3(0, 1.8, -117), Vector3(7, 3.6, 0.2), wood, true)
 	build_landscape()
 	batch_geometry(self)
+	refresh_resonance()
 
 func decorate_exchange() -> void:
 	var brass := mat("ba9560", 0.7)
@@ -186,30 +190,32 @@ func decorate_car(car: int, z: float) -> void:
 		for section in [-1, 1]:
 			var sz: float = z + section * 4.8
 			match car:
-				1, 6:
-					block(Vector3(x, 0.45, sz), Vector3(1.25, 0.9, 2), mat("59303f"), true)
-					block(Vector3(side * 3.1, 0.95, sz), Vector3(0.22, 1.1, 2), mat("59303f"))
-					for arm in [-0.9, 0.9]:
-						block(Vector3(x, 0.9, sz + arm), Vector3(1.35, 0.12, 0.13), brass)
+				1:
+					if section == 1:
+						prop("telescope", Vector3(x, 0, sz), -side * PI / 2)
+					else:
+						prop("settee", Vector3(x, 0, sz), -side * PI / 2)
+					collision_box(Vector3(x, 0.5, sz), Vector3(1.2, 1, 2))
+				6:
+					prop("settee" if section < 0 else "luggage", Vector3(x, 0, sz), -side * PI / 2)
+					collision_box(Vector3(x, 0.5, sz), Vector3(1.2, 1, 2))
 				2:
-					block(Vector3(x, 0.35, sz), Vector3(1.2, 0.7, 1.6), wood, true)
-					for leaf in range(5):
-						var branch := cylinder(Vector3(x + rng.randf_range(-0.3, 0.3), 1.0 + leaf * 0.16, sz), 0.22 + leaf * 0.035, 0.55, green)
-						branch.rotation.z = rng.randf_range(-0.6, 0.6)
+					prop("winter_fern", Vector3(x, 0, sz))
+					collision_box(Vector3(x, 0.35, sz), Vector3(1.2, 0.7, 1.6))
 				3:
-					cylinder(Vector3(x, 0.6, sz), 0.08, 1.2, brass)
-					block(Vector3(x, 1.2, sz), Vector3(1.4, 0.12, 1.7), mat("b9a69c"), true)
-					cylinder(Vector3(x, 1.3, sz), 0.25, 0.03, brass)
-					cylinder(Vector3(x, 1.55, sz), 0.05, 0.5, brass)
+					prop("dining_table", Vector3(x, 0, sz))
+					collision_box(Vector3(x, 0.6, sz), Vector3(1.4, 1.2, 1.7))
 				4:
-					block(Vector3(x, 1.1, sz), Vector3(1.1, 2.2, 1.8), wood, true)
-					for shelf in range(4):
-						block(Vector3(x - side * 0.56, 0.3 + shelf * 0.5, sz), Vector3(0.04, 0.06, 1.8), brass)
-						for book in range(7):
-							block(Vector3(x - side * 0.56, 0.5 + shelf * 0.5, sz - 0.72 + book * 0.23), Vector3(0.08, 0.32 + rng.randf() * 0.08, 0.15), mat(["603b45", "3c6663", "9d8155"][book % 3]))
+					prop("bookcase", Vector3(x, 0, sz), -side * PI / 2)
+					collision_box(Vector3(x, 1.1, sz), Vector3(1.1, 2.2, 1.8))
 				5:
+					block(Vector3(x, 0.7, sz), Vector3(1.2, 1.4, 1.9), wood, true)
 					for pipe in range(5):
-						cylinder(Vector3(x, 1.25, sz - 0.6 + pipe * 0.3), 0.1, 1.8 + pipe * 0.2, brass)
+						cylinder(Vector3(x, 1.75, sz - 0.6 + pipe * 0.3), 0.1, 1.8 + pipe * 0.2, brass)
+					for key in range(12):
+						block(Vector3(x - side * 0.64, 1.22, sz - 0.8 + key * 0.14), Vector3(0.25, 0.05, 0.12), mat("e5d7b5"))
+						if key % 7 not in [2, 6]:
+							block(Vector3(x - side * 0.60, 1.26, sz - 0.73 + key * 0.14), Vector3(0.13, 0.04, 0.06), mat("151923"))
 		# Pedestals sit inside the furniture line, leaving the aisle navigable.
 		var pedestal_z := z + rng.randf_range(-1.8, 1.8)
 		block(Vector3(side * 2.1, 0.45, pedestal_z), Vector3(0.85, 0.9, 0.85), wood, true)
@@ -266,12 +272,22 @@ func _process(delta: float) -> void:
 			item.position.z -= 230
 
 func rotate_timetable() -> Dictionary:
-	# Structural slots never change; move complete carriages by an exact slot length.
-	# The exchange remains fixed, so the player and counter cannot be displaced.
-	var changes: Dictionary = {}
 	var previous := car_order.duplicate()
 	var last: int = car_order.pop_back()
 	car_order.insert(1, last)
+	return apply_order(previous)
+
+func swap_slots(first: int, second: int) -> Dictionary:
+	if first < 1 or second < 1 or first >= COUNT or second >= COUNT or absi(first - second) != 1:
+		return {}
+	var previous := car_order.duplicate()
+	var held := car_order[first]
+	car_order[first] = car_order[second]
+	car_order[second] = held
+	return apply_order(previous)
+
+func apply_order(previous: Array) -> Dictionary:
+	var changes: Dictionary = {}
 	for slot in range(1, COUNT):
 		var identity: int = car_order[slot]
 		var old_slot := previous.find(identity)
@@ -279,7 +295,22 @@ func rotate_timetable() -> Dictionary:
 		cars[identity].position.z = -slot * LENGTH
 		signage[identity].text = "%02d  /  %s" % [slot, NAMES[identity]]
 		changes[old_slot] = offset
+	refresh_resonance()
 	return changes
+
+func paired(first: int, second: int) -> bool:
+	return absi(car_order.find(first) - car_order.find(second)) == 1
+
+func refresh_resonance() -> void:
+	for identity in range(lamps.size()):
+		var color := Color("ffce91")
+		if identity in [1, 2] and paired(1, 2):
+			color = Color("a8dfcf")
+		elif identity in [4, 5] and paired(4, 5):
+			color = Color("b9b4eb")
+		elif identity in [3, 6] and paired(3, 6):
+			color = Color("f2b1a7")
+		lamps[identity].light_color = color
 
 func car_name(slot: int) -> String:
 	return NAMES[car_order[slot]]
@@ -287,21 +318,30 @@ func car_name(slot: int) -> String:
 func batch_geometry(parent: Node3D) -> void:
 	if "--unbatched" in OS.get_cmdline_user_args():
 		return
-	# Merge immutable architecture by material, keeping each carriage independently movable.
-	# Collision bodies keep their exact transforms; moving scenery and transparent windows stay separate.
+	# Merge immutable architecture and original prop surfaces by material. Keep the
+	# carriage roots movable and collision transforms exact; glass sorts separately.
 	var batches: Dictionary = {}
 	for child in parent.get_children():
 		if not child is MeshInstance3D or child in scenery:
 			continue
-		var surface := child.material_override as StandardMaterial3D
-		if surface == null or surface.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
-			continue
-		if not batches.has(surface):
-			var tool := SurfaceTool.new()
-			tool.set_material(surface)
-			batches[surface] = tool
-		var tool: SurfaceTool = batches[surface]
+		var eligible := true
 		for index in range(child.mesh.get_surface_count()):
+			var surface := child.material_override as StandardMaterial3D
+			if surface == null:
+				surface = child.mesh.surface_get_material(index) as StandardMaterial3D
+			if surface == null or surface.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+				eligible = false
+		if not eligible:
+			continue
+		for index in range(child.mesh.get_surface_count()):
+			var surface := child.material_override as StandardMaterial3D
+			if surface == null:
+				surface = child.mesh.surface_get_material(index) as StandardMaterial3D
+			if not batches.has(surface):
+				var tool := SurfaceTool.new()
+				tool.set_material(surface)
+				batches[surface] = tool
+			var tool: SurfaceTool = batches[surface]
 			tool.append_from(child.mesh, index, child.transform)
 		for body in child.get_children():
 			if body is StaticBody3D:
@@ -317,3 +357,33 @@ func batch_geometry(parent: Node3D) -> void:
 		item.mesh = tool.commit()
 		item.material_override = surface
 		parent.add_child(item)
+
+func collision_box(pos: Vector3, size: Vector3) -> void:
+	var body := StaticBody3D.new()
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.position = pos
+	body.add_child(collision)
+	(current_parent if current_parent != null else self).add_child(body)
+
+func prop(name: String, pos: Vector3, rotation_y := 0.0) -> void:
+	var packed := load("res://assets/models/%s.glb" % name) as PackedScene
+	var source := packed.instantiate()
+	var pose := Transform3D(Basis(Vector3.UP, rotation_y), pos)
+	flatten_prop(source, pose)
+	source.free()
+
+func flatten_prop(source: Node, parent_pose: Transform3D) -> void:
+	var pose := parent_pose
+	if source is Node3D:
+		pose *= source.transform
+	if source is MeshInstance3D:
+		var instance := MeshInstance3D.new()
+		instance.mesh = source.mesh
+		instance.material_override = source.material_override
+		instance.transform = pose
+		(current_parent if current_parent != null else self).add_child(instance)
+	for child in source.get_children():
+		flatten_prop(child, pose)

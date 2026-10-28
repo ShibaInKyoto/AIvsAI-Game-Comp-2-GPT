@@ -7,6 +7,7 @@ var train: MidnightTrain
 var conductor: MidnightConductor
 var player: CharacterBody3D
 var camera: Camera3D
+var lantern: SpotLight3D
 var interface: MidnightInterface
 var sound: MidnightSound
 var freight: Array[MidnightFreight] = []
@@ -67,6 +68,7 @@ func _ready() -> void:
 	interface.next_service_requested.connect(func():
 		service += 1
 		start_ticket(false))
+	interface.shunt_requested.connect(shunt_carriages)
 	interface.resume_requested.connect(resume)
 	interface.quit_requested.connect(to_title)
 	interface.setting_changed.connect(change_setting)
@@ -113,8 +115,10 @@ func build_world(ticket: int) -> void:
 	freight.clear()
 	passengers.clear()
 	world_root = Node3D.new()
+	world_root.name = "NightService"
 	add_child(world_root)
 	train = MidnightTrain.new()
+	train.name = "TimetableTrain"
 	world_root.add_child(train)
 	train.generate(ticket)
 	var rng := RandomNumberGenerator.new()
@@ -127,6 +131,7 @@ func build_world(ticket: int) -> void:
 			kind = index
 		if index == 8:
 			kind = 2
+		cargo.name = "Freight_%02d" % index
 		cargo.configure(kind, 12 + (index / 3 + 1) * 8 + rng.randi_range(0, 8), index)
 		cargo.position = train.spawn_points[index]
 		world_root.add_child(cargo)
@@ -143,6 +148,7 @@ func build_world(ticket: int) -> void:
 
 func build_player() -> void:
 	player = CharacterBody3D.new()
+	player.name = "Porter"
 	player.position = Vector3(0, 0.05, 2.5)
 	player.floor_snap_length = 0.3
 	var collider := CollisionShape3D.new()
@@ -157,6 +163,16 @@ func build_player() -> void:
 	camera.fov = 78
 	camera.far = 400
 	player.add_child(camera)
+	lantern = SpotLight3D.new()
+	lantern.position = Vector3(0.18, -0.15, 0.1)
+	lantern.light_color = Color("ffdb9e")
+	lantern.light_energy = 0.25
+	lantern.spot_range = 11
+	lantern.spot_angle = 44
+	lantern.spot_attenuation = 1.1
+	lantern.shadow_enabled = true
+	lantern.shadow_bias = 0.04
+	camera.add_child(lantern)
 	world_root.add_child(player)
 
 func start_ticket(daily: bool, forced_seed := 0) -> void:
@@ -203,7 +219,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				paused = true
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-				interface.show_route(train, freight, run)
+				interface.show_route(train, freight, run, at_counter())
 		if event.keycode == KEY_F11:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
 		if event.keycode == KEY_ESCAPE and playing:
@@ -216,6 +232,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.keycode:
 			KEY_E: interact()
 			KEY_F: fold_home()
+			KEY_L: lantern.visible = not lantern.visible
 			KEY_T: rotate_timetable()
 			KEY_X: drop_selected()
 			KEY_Q:
@@ -278,6 +295,9 @@ func nearest_freight() -> MidnightFreight:
 			nearest = cargo
 	return nearest
 
+func passenger_fare(identity: int) -> int:
+	return roundi(MidnightPassenger.FARES[identity] * (1.25 if train.paired(3, 6) else 1.0))
+
 func nearest_passenger() -> MidnightPassenger:
 	for passenger in passengers:
 		var offset := passenger.position + Vector3(0, 1.4, 0) - camera.global_position
@@ -286,9 +306,12 @@ func nearest_passenger() -> MidnightPassenger:
 	return null
 
 func interact() -> void:
-	if at_counter():
+	var cargo := nearest_freight()
+	if at_counter() and cargo == null:
+		var aurora_time := run.count_kind(3) * 12 if train.paired(1, 2) else 0
 		var earned := run.bank()
 		if earned > 0:
+			run.remaining = minf(MidnightRun.DURATION + 60, run.remaining + aurora_time)
 			sound.play("bank")
 			notify("£%d exchanged. %s" % [earned, "Your debt is paid! Q at the counter to leave, or keep going." if run.banked >= MidnightRun.TARGET else "Your savings are safe."], 5)
 		else:
@@ -298,14 +321,13 @@ func interact() -> void:
 	if passenger != null:
 		if passenger.completed:
 			notify(MidnightPassenger.THANKS[passenger.identity], 6)
-		elif run.trade(MidnightPassenger.NEEDS[passenger.identity], MidnightPassenger.FARES[passenger.identity], passenger.identity):
+		elif run.trade(MidnightPassenger.NEEDS[passenger.identity], passenger_fare(passenger.identity), passenger.identity):
 			passenger.completed = true
 			sound.play("bank", 0.8)
-			notify("%s  /  £%d fare sealed. Bank it at the exchange." % [MidnightPassenger.THANKS[passenger.identity], MidnightPassenger.FARES[passenger.identity]], 7)
+			notify("%s  /  £%d fare sealed. Bank it at the exchange." % [MidnightPassenger.THANKS[passenger.identity], passenger_fare(passenger.identity)], 7)
 		else:
 			notify(MidnightPassenger.REQUESTS[passenger.identity], 7)
 		return
-	var cargo := nearest_freight()
 	if cargo == null:
 		return
 	if run.take(cargo.kind, cargo.value, cargo.serial):
@@ -341,19 +363,34 @@ func rotate_timetable() -> void:
 		notify("Too close to dawn to switch the train safely.")
 		return
 	var changes := train.rotate_timetable()
+	move_carriage_contents(changes)
+	run.remaining -= 10
+	grace = maxf(grace, 5)
+	sound.play("fold", 0.7)
+	notify("The timetable turns. %s is now carriage 01. −10 seconds." % train.car_name(1).to_lower(), 5)
+
+func move_carriage_contents(changes: Dictionary) -> void:
 	for cargo in freight:
 		var old_slot := clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 0, 6)
 		if changes.has(old_slot):
 			cargo.position.z += float(changes[old_slot])
-	run.remaining -= 10
-	grace = maxf(grace, 5)
 	for passenger in passengers:
 		var old_slot := clampi(roundi(-passenger.position.z / MidnightTrain.LENGTH), 1, 6)
 		passenger.position.z += float(changes.get(old_slot, 0))
 	var conductor_slot := clampi(roundi(-conductor.position.z / MidnightTrain.LENGTH), 1, 6)
 	conductor.position.z = clampf(conductor.position.z + float(changes.get(conductor_slot, 0)), -110, -13)
-	sound.play("fold", 0.7)
-	notify("The timetable turns. %s is now carriage 01. −10 seconds." % train.car_name(1).to_lower(), 5)
+
+func shunt_carriages(first: int, second: int) -> void:
+	if not playing or not at_counter() or run.remaining <= 10:
+		return
+	var changes := train.swap_slots(first, second)
+	if changes.is_empty():
+		return
+	move_carriage_contents(changes)
+	run.remaining -= 6
+	grace = maxf(grace, 3)
+	sound.play("fold", 0.9)
+	interface.show_route(train, freight, run, true)
 
 func fold_home() -> void:
 	if at_counter():
@@ -458,10 +495,7 @@ func _physics_process(delta: float) -> void:
 	camera.position.y = lerpf(camera.position.y, (1.35 if sneaking else 1.6) + bob, delta * 12)
 	camera.rotation.z = sin(elapsed * 0.75) * 0.007 * motion
 	camera.fov = lerpf(camera.fov, (78.0 + 5.0 * motion) if sprinting else 78.0, delta * 5)
-	var noise := 9.0 + run.count_kind(1) * 9.0 + (7.0 if sprinting else 0.0)
-	noise -= run.ward * 4 + run.count_kind(3) * 3
-	if sneaking:
-		noise *= 0.45
+	var noise := hearing_radius(sprinting, sneaking)
 	threat = conductor.advance(delta, player.position, maxf(3, noise), grace)
 	sound.threat(delta, threat)
 	var distance := conductor.position.distance_to(player.position)
@@ -497,9 +531,12 @@ func _physics_process(delta: float) -> void:
 			message = "E  %s  /  £%d  /  %s" % [cargo.title().to_upper(), cargo.value, cargo.effect()]
 		elif run.inventory.size() == run.capacity:
 			message = "SATCHEL FULL  /  Return to carriage 00. F folds home if you carry a doorway."
+	var counter_cargo := nearest_freight() if at_counter() else null
+	if counter_cargo != null:
+		message = "E  %s  /  £%d  /  %s" % [counter_cargo.title().to_upper(), counter_cargo.value, counter_cargo.effect()]
 	var passenger := nearest_passenger()
 	if passenger != null and not at_counter():
-		message = "E  %s  /  %s for a £%d sealed fare" % [MidnightPassenger.NAMES[passenger.identity], MidnightFreight.TYPES[MidnightPassenger.NEEDS[passenger.identity]], MidnightPassenger.FARES[passenger.identity]]
+		message = "E  %s  /  %s for a £%d sealed fare" % [MidnightPassenger.NAMES[passenger.identity], MidnightFreight.TYPES[MidnightPassenger.NEEDS[passenger.identity]], passenger_fare(passenger.identity)]
 		if passenger.completed:
 			message = "E  %s  /  Fare sealed. Bank it at the exchange." % MidnightPassenger.NAMES[passenger.identity]
 	interface.update(run, car, energy, threat, message, sneaking)
@@ -510,6 +547,15 @@ func _physics_process(delta: float) -> void:
 		interface.status_label.text = "SERVICE %d  /  VOYAGE £%d  /  BEST VOYAGE £%d  /  COMPOSURE %d%%" % [service, voyage_total, best_voyage, int(run.composure)]
 	if run.finished:
 		finish_run()
+
+func hearing_radius(sprinting: bool, is_sneaking: bool) -> float:
+	var current_identity: int = train.car_order[clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, 6)]
+	var muffled: bool = current_identity in [4, 5] and train.paired(4, 5)
+	var noise: float = 9.0 + (0 if muffled else run.count_kind(1) * 9.0) + (7.0 if sprinting else 0.0)
+	noise -= run.ward * 4 + run.count_kind(3) * 3
+	if is_sneaking:
+		noise *= 0.45
+	return maxf(3, noise)
 
 func change_setting(key: String, value: float) -> void:
 	match key:
@@ -542,17 +588,30 @@ func save_settings() -> void:
 		DirAccess.rename_absolute(SAVE_PATH + ".tmp", SAVE_PATH)
 
 func capture_frame() -> void:
+	notice_time = 0
+	interface.notice_label.text = ""
 	if "--capture-result" in OS.get_cmdline_user_args():
 		run.banked = 740
 		run.commissions = {0: true, 1: true, 2: true, 3: true}
 		finish_run()
 	if "--capture-route" in OS.get_cmdline_user_args():
 		paused = true
-		interface.show_route(train, freight, run)
+		interface.show_route(train, freight, run, at_counter())
 	if "--capture-title" in OS.get_cmdline_user_args():
 		to_title()
 	if "--capture-car" in OS.get_cmdline_user_args():
 		player.position = Vector3(0, 0.1, -47)
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--capture-car="):
+			var identity := clampi(argument.get_slice("=", 1).to_int(), 1, 6)
+			player.position = Vector3(0, 0.05, -identity * MidnightTrain.LENGTH + 7)
+	if "--capture-portrait" in OS.get_cmdline_user_args():
+		player.position = Vector3(-0.7, 0.05, -8)
+		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
+	if "--capture-inventory" in OS.get_cmdline_user_args():
+		run.capacity = 4
+		for kind in range(4):
+			run.take(kind, 20 + kind * 10, 700 + kind)
 	for frame in range(40):
 		await get_tree().process_frame
 	print("RENDER: %d draw calls / %d visible objects" % [Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)])
@@ -576,6 +635,10 @@ func smoke_test() -> void:
 	var value := cargo.value
 	interact()
 	verify(run.inventory.size() == 1 and run.held_value() == value, "Collection failed")
+	drop_selected()
+	verify(run.inventory.is_empty() and not cargo.taken, "Dropping freight failed")
+	interact()
+	verify(run.inventory.size() == 1 and cargo.taken, "Dropped freight cannot be recovered")
 	player.position = Vector3(0, 0.1, 3.7)
 	interact()
 	verify(run.banked == value and run.inventory.is_empty(), "Banking failed")
@@ -584,11 +647,27 @@ func smoke_test() -> void:
 	rotate_timetable()
 	verify(train.car_order[1] == 6, "Timetable order failed")
 	verify(is_equal_approx(freight[15].position.z, last_car_cargo_z + 90), "Timetable freight transfer failed")
+	var time_before_shunt := run.remaining
+	interface.show_route(train, freight, run, true)
+	(interface.route_buttons.get_child(0) as Button).pressed.emit()
+	verify(is_equal_approx(run.remaining, time_before_shunt - 6), "Shunt time cost failed")
+	shunt_carriages(2, 3)
+	verify(train.paired(1, 2) and train.paired(4, 5) and train.paired(3, 6), "Resonance couplings failed")
+	verify(is_equal_approx(freight[15].position.z, last_car_cargo_z + 54), "Shunt freight transfer failed")
+	verify(train.swap_slots(0, 1).is_empty(), "Exchange must never move")
+	verify(passenger_fare(3) == 138, "Resonant commission bonus failed")
+	run.take(1, 20, 202)
+	player.position.z = -train.car_order.find(4) * MidnightTrain.LENGTH
+	var quiet_radius := hearing_radius(false, false)
+	player.position.z = 3.7
+	verify(hearing_radius(false, false) > quiet_radius, "Archive/choir bell muffling failed")
+	run.inventory.clear()
+	var first_fare := passenger_fare(0)
 	var passenger := passengers[0]
 	run.take(MidnightPassenger.NEEDS[0], 30, 200)
 	player.position = passenger.position + Vector3(0, 0.05, 1.5)
 	interact()
-	verify(passenger.completed and run.pending_fares == 75 and run.inventory.is_empty(), "Passenger trade failed")
+	verify(passenger.completed and run.pending_fares == first_fare and run.inventory.is_empty(), "Passenger trade failed")
 	player.position = Vector3(0, 0.05, 2)
 	# Check actual CharacterBody collision against the floor.
 	for frame in range(60):
@@ -610,17 +689,23 @@ func smoke_test() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	verify(player.position.z > 0 and run.inventory.is_empty() and run.banked == value and run.recovered == 1, "Catch recovery failed")
-	verify(run.pending_fares == 75, "Sealed fare lost during recovery")
+	verify(run.pending_fares == first_fare, "Sealed fare lost during recovery")
+	player.position = Vector3(0, 0.05, 3.7)
+	run.remaining = 100
+	run.take(3, 10, 203)
+	interact()
+	verify(is_equal_approx(run.remaining, 112), "Observatory/garden time resonance failed")
+	verify(run.banked == value + first_fare + 10, "Fare and relic combined banking failed")
 	run.remaining = 0
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	verify(run.finished and not playing, "Run completion failed")
 	verify(interface.mode == "result", "Result UI failed")
-	interface.show_route(train, freight, run)
+	interface.show_route(train, freight, run, at_counter())
 	verify(interface.mode == "route" and "relics" in interface.subtitle.text, "Route ledger failed")
 	interface.show_settings()
 	verify(interface.settings_box.visible, "Settings UI failed")
-	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, passenger trade, floor/window physics, fold, conductor encounter, results, route/settings UI")
+	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, fold, conductor encounter, results, route/settings UI")
 	await shutdown()
 
 func walk_test_to(target: Vector3) -> bool:

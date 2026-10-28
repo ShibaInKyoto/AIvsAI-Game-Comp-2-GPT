@@ -6,7 +6,7 @@ A native Windows 10/11 game built in Godot 4.6.3. First-person magical freight s
 
 A satchel holds only three relics initially. A stolen hour extends the deadline when banked. Bells multiply the entire cargo delivery but draw the conductor. A folded doorway sacrifices its value to bring the rest home. Aurora muffles the porter and restores composure when banked.
 
-The timetable lever moves the last carriage to the front for ten seconds. All geometry, freight, passengers and the conductor travel consistently with the carriage. This is a physical route change, not a cosmetic label swap. The exchange is fixed and safe.
+The timetable lever moves the last carriage to the front for ten seconds. All geometry, freight, passengers and the conductor travel consistently with the carriage. Adjacent carriages can also be swapped on the switchboard for six seconds. The exchange remains fixed. Specific adjacencies awaken resonances: observatory/garden adds time when banking aurora, archive/choir muffles bells inside those rooms, and dining/last carriage increases passenger fares. Swaps move complete geometry, freight, people and the conductor. The route is a spatial planning puzzle as well as a shortcut.
 
 Four optional passenger commissions consume particular relics in return for sealed fares. Those fares survive capture but still need to reach the counter. This trades immediate utility for story and a reliable payout. People helped appear on the dawn platform.
 
@@ -14,7 +14,7 @@ Bank £600 to buy freedom. Leave early or pursue a larger score. Capture returns
 
 ## Art and audio
 
-Procedural 3D architecture and furnishings for an observatory, winter garden, dining room, archive, choir and final carriage. Brass, teal fan wallpaper, warm lamps, velvet and an original woven runner. A procedural aurora and passing forest establish the moving train. Original generated ambient composition, rail rhythm and effects require no external audio service. Fonts are DejaVu, with their license retained.
+Procedural 3D architecture and furnishings for an observatory, winter garden, dining room, archive, choir and final carriage. Brass, teal fan wallpaper, warm lamps, velvet and an original woven runner. A procedural aurora and passing forest establish the moving train. Original generated ambient composition, rail rhythm and effects require no external audio service. Original Blender-modeled settees, telescopes, ferns, dining settings, bookcases, luggage and masked characters replace the initial block placeholders. A player lantern casts local shadows and can be toggled with L. Fonts are DejaVu, with their license retained.
 
 Static carriage meshes are merged by material. A representative dining-room capture dropped from 905 to 254 draw calls (72% reduction), while preserving movable carriage roots and collision transforms. This is a draw-call comparison, not a claim about hardware frame rate. Cloud rendering uses Mesa llvmpipe, not the judges' GPUs.
 
@@ -25,12 +25,12 @@ Simulation/economy (`run_state.gd`) is independent of the scene tree. Main compo
 ## Validation
 
 - State suite: 100,026 checks, including 25,000 randomized actions across 100 seeds.
-- Scene smoke: pickup/bank, upgrades, passenger trade, actual floor and window collision, folding, conductor collision/recovery, result/route/settings UI.
+- Scene smoke: pickup/drop/recover/bank, upgrades, actual switchboard button and exact time charge, all three resonance effects, passenger trade, actual floor and window collision, folding, conductor collision/recovery, result/route/settings UI.
 - Walking route: 228m aisle round trip, nine physical pickups, three timetable turns, £683 extraction, dawn scene and restart into a harder service.
 - Release exports use explicit checks, never stripped `assert()` calls.
-- Native Windows CI is required before a tagged release. Earlier milestone 9fdd01e passed Windows CI; current revisions must pass their own run.
+- Native Windows CI is required before a tagged release. Milestones 9fdd01e and f4eb370 passed Windows CI; current revisions must pass their own run.
 - Linux and Windows standalone exports are also tested locally (Windows through Wine). Wine supplements actual Windows CI.
-- Graphical captures inspect gameplay, menus and dawn results. No human playtest has been claimed.
+- A cache-free import also passed the entire suite with the modeled assets. Graphical captures inspect gameplay, menus and dawn results. No human playtest has been claimed.
 
 ## Continuity and release
 

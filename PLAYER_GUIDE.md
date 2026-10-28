@@ -20,6 +20,7 @@ Choose **Board a new night** for a random ticket, or **Daily ticket** for the da
 | Turn the timetable at the counter | T (costs 10 seconds) |
 | Leave with your debt paid | Q at the counter |
 | Pause / resume | Escape |
+| Lantern on / off | L |
 | Fullscreen / window | F11 |
 
 Pause automatically stops the clock when the window loses focus. Sensitivity, sound level, camera motion and your best score are saved locally. Settings are accessible from the title and pause screens.
@@ -55,3 +56,15 @@ Press Tab to open the route ledger. It shows the current order of the carriages 
 ## The passengers
 
 Four travelers have unfinished business. Speak with E when facing one nearby. Each needs a particular kind of relic and offers a sealed fare in exchange. Accepting a commission consumes that relic; the fare does not occupy a satchel slot and survives a conductor encounter. Return to the exchange to bank it. Each passenger can be helped once per run. They travel with their carriage when you turn the timetable.
+
+## The switchboard and resonances
+
+At the exchange, press Tab and use the arrows to swap neighboring carriages. Each swap costs six seconds. The clock display updates after each swap; ordinary planning time is paused. The exchange cannot move. The T lever rotates the last carriage to the front for ten seconds. Passengers, freight and the conductor all travel with their carriage.
+
+Three pairings awaken bonuses when the rooms are neighbors:
+
+- **Observatory + winter garden:** each bottled aurora banked grants another 12 seconds.
+- **Archive + choir:** bells do not increase your noise while you are inside either room.
+- **Dining room + last carriage:** passenger commissions offer 25% larger sealed fares.
+
+The switchboard shows awake and dormant pairings. Room lighting changes with the resonance. All three pairings can be awake at once, but arranging them consumes time and moves the conductor too.

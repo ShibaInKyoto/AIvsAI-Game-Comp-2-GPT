@@ -2,7 +2,9 @@
 
 A native 3D game about impossible freight on the last train before dawn. Built in Godot 4.6.3 for Windows 10/11 (x64); a Linux build is also available.
 
-You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells increase the value of an entire delivery but attract attention. Bottled hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside. Four passenger commissions trade your tools for sealed fares and a different dawn. An escalating endless-service mode tracks your whole voyage.
+You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells increase the value of an entire delivery but attract attention. Bottled hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside. Shunt neighboring carriages to awaken resonance bonuses. Four passenger commissions trade your tools for sealed fares and a different dawn. An escalating endless-service mode tracks your whole voyage.
+
+![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
 ## Playing
 
@@ -34,6 +36,6 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 - `game/interface.gd`, `sound.gd`: scalable UI and original soundscape.
 - `assets/`: original generated textures/audio and licensed DejaVu fonts.
 - `tests/`: simulation invariants; integration tests also exercise the running scene.
-- `scripts/`: reproducible asset generation, verified tool installation, validation.
+- `scripts/`: reproducible asset generation (including optional Blender 4.3 modeling), verified tool installation, validation.
 
 Pushes build downloadable native artifacts. Version tags run both Linux and native Windows tests before GitHub Actions publishes a release. See [design and progress](docs/DESIGN.md).

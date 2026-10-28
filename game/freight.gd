@@ -25,6 +25,7 @@ func _ready() -> void:
 	frame.metallic = 0.75
 	var glow := StandardMaterial3D.new()
 	glow.albedo_color = COLORS[kind]
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow.emission_enabled = true
 	glow.emission = COLORS[kind]
 	glow.emission_energy_multiplier = 0.65
