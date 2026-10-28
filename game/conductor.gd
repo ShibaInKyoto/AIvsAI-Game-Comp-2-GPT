@@ -47,4 +47,5 @@ func advance(delta: float, target: Vector3, noise: float, grace: float) -> float
 		body.rotation.y = 0 if patrol_direction > 0 else PI
 	position.z = clampf(position.z, -110, -13)
 	lantern.light_energy = 3 + sin(phase * 6) * 0.3
+	lantern.light_color = Color("ff553a") if alert else Color("e48667")
 	return clampf(1.0 - distance / 20.0, 0, 1) if target.z < -9 else 0.0

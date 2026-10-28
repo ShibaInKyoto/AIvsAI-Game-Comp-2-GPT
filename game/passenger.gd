@@ -52,4 +52,4 @@ func _process(delta: float) -> void:
 	figure.position.y = sin(elapsed * 1.3 + identity) * 0.035
 	if completed:
 		figure.scale = figure.scale.lerp(Vector3(0.85, 0.85, 0.85), delta)
-		caption.text = "FARE SEALED  /  THANK YOU"
+		caption.text = "A TRAVELER HELPED  /  THANK YOU"

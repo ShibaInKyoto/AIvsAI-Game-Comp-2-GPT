@@ -214,6 +214,28 @@ func start_ticket(daily: bool, forced_seed := 0) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if not smoke and not capture else Input.MOUSE_MODE_VISIBLE
 	notify("Bank £600 before dawn. The brass counter behind you is your sanctuary.", 7)
 
+func _input(event: InputEvent) -> void:
+	# Menu shortcuts must run before focused buttons consume Tab for navigation.
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if event.keycode == KEY_F11:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		get_viewport().set_input_as_handled()
+	elif event.keycode == KEY_TAB and playing and (not paused or interface.mode == "route"):
+		if paused:
+			resume()
+		else:
+			paused = true
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			interface.show_route(train, freight, run, at_counter())
+		get_viewport().set_input_as_handled()
+	elif event.keycode == KEY_ESCAPE and playing:
+		if paused:
+			resume()
+		else:
+			pause()
+		get_viewport().set_input_as_handled()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and playing and not paused and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		yaw -= event.relative.x * 0.0022 * sensitivity
@@ -221,20 +243,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		player.rotation.y = yaw
 		camera.rotation.x = pitch
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_TAB and playing:
-			if paused:
-				resume()
-			else:
-				paused = true
-				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-				interface.show_route(train, freight, run, at_counter())
-		if event.keycode == KEY_F11:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
-		if event.keycode == KEY_ESCAPE and playing:
-			if paused:
-				resume()
-			else:
-				pause()
 		if not playing or paused:
 			return
 		match event.keycode:
@@ -504,7 +512,7 @@ func _physics_process(delta: float) -> void:
 	camera.rotation.z = sin(elapsed * 0.75) * 0.007 * motion
 	camera.fov = lerpf(camera.fov, (78.0 + 5.0 * motion) if sprinting else 78.0, delta * 5)
 	var noise := hearing_radius(sprinting, sneaking)
-	threat = conductor.advance(delta, player.position, maxf(3, noise), grace)
+	threat = conductor.advance(delta, player.position, noise, grace)
 	sound.threat(delta, threat)
 	var distance := conductor.position.distance_to(player.position)
 	if distance < 9 and player.position.z < -12 and grace <= 0:
@@ -546,8 +554,13 @@ func _physics_process(delta: float) -> void:
 	if passenger != null and not at_counter():
 		message = "E  %s  /  %s for a £%d sealed fare" % [MidnightPassenger.NAMES[passenger.identity], MidnightFreight.TYPES[MidnightPassenger.NEEDS[passenger.identity]], passenger_fare(passenger.identity)]
 		if passenger.completed:
-			message = "E  %s  /  Fare sealed. Bank it at the exchange." % MidnightPassenger.NAMES[passenger.identity]
+			message = "E  %s  /  A traveler you helped. Speak to them again." % MidnightPassenger.NAMES[passenger.identity]
 	interface.update(run, car, energy, threat, message, sneaking)
+	if threat > 0.35:
+		if conductor.alert:
+			interface.threat_label.text = "HE HEARS YOU  /  Bells carry far. Run, fold home, or drop them and sneak aside."
+		elif sneaking and absf(player.position.x) > noise:
+			interface.threat_label.text = "KEEP QUIET  /  Let the red lantern pass."
 	if run.pending_fares > 0:
 		interface.manifest_label.text = "MANIFEST %d/%d   /   £%d SEALED FARES TO BANK   /   %d OF 4 PASSENGERS HELPED" % [run.inventory.size(), run.capacity, run.pending_fares, run.commissions.size()]
 	interface.room_label.text = "%02d / %s" % [car, train.car_name(car)]
@@ -560,11 +573,11 @@ func _physics_process(delta: float) -> void:
 func hearing_radius(sprinting: bool, is_sneaking: bool) -> float:
 	var current_identity: int = train.car_order[clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, 6)]
 	var muffled: bool = current_identity in [4, 5] and train.paired(4, 5)
-	var noise: float = 9.0 + (0 if muffled else run.count_kind(1) * 9.0) + (7.0 if sprinting else 0.0)
-	noise -= run.ward * 4 + run.count_kind(3) * 3
+	var bells := 0 if muffled else run.count_kind(1)
+	# Quiet crouching fits inside the side passages. Bells still betray a hiding porter.
 	if is_sneaking:
-		noise *= 0.45
-	return maxf(3, noise)
+		return maxf(1.1, 1.5 + bells * 3.5 - run.ward - run.count_kind(3))
+	return maxf(3, 9.0 + bells * 9.0 + (7.0 if sprinting else 0.0) - run.ward * 4 - run.count_kind(3) * 3)
 
 func change_setting(key: String, value: float) -> void:
 	match key:
@@ -659,7 +672,15 @@ func smoke_test() -> void:
 	verify(train.car_order[1] == last_identity, "Timetable order failed")
 	verify(is_equal_approx(last_cargo.position.z, last_car_cargo_z + 90), "Timetable freight transfer failed")
 	var time_before_shunt := run.remaining
+	paused = true
 	interface.show_route(train, freight, run, true)
+	(interface.route_buttons.get_child(0) as Button).grab_focus()
+	test_key(KEY_TAB, true)
+	verify(not paused and not interface.menu.visible, "Tab must close the route with a focused button")
+	test_key(KEY_TAB, false)
+	test_key(KEY_TAB, true)
+	verify(paused and interface.mode == "route", "Tab must reopen the route")
+	test_key(KEY_TAB, false)
 	(interface.route_buttons.get_child(0) as Button).pressed.emit()
 	verify(is_equal_approx(run.remaining, time_before_shunt - 6), "Shunt time cost failed")
 	verify(run.pressure == 0, "Switchboard pressure cost failed")
@@ -687,6 +708,8 @@ func smoke_test() -> void:
 	player.position = passenger.position + Vector3(0, 0.05, 1.5)
 	interact()
 	verify(passenger.completed and run.pending_fares == first_fare and run.inventory.is_empty(), "Passenger trade failed")
+	resume()
+	await test_quiet_encounter()
 	player.position = Vector3(0, 0.05, 2)
 	# Check actual CharacterBody collision against the floor.
 	for frame in range(60):
@@ -724,8 +747,44 @@ func smoke_test() -> void:
 	verify(interface.mode == "route" and "relics" in interface.subtitle.text, "Route ledger failed")
 	interface.show_settings()
 	verify(interface.settings_box.visible, "Settings UI failed")
-	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, fold, conductor encounter, results, route/settings UI")
+	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, quiet evasion, fold, conductor capture, results, focused route/settings UI")
 	await shutdown()
+
+func test_key(key: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.keycode = key
+	event.physical_keycode = key
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
+func test_quiet_encounter() -> void:
+	# Test the advertised escape using actual movement, input and live patrol logic.
+	player.position = Vector3(0, 0.05, -51.2)
+	player.velocity = Vector3.ZERO
+	grace = 10
+	verify(await walk_test_to(Vector3(2.5, 0, -51.2)), "Side refuge is obstructed")
+	conductor.position.z = -57.2
+	conductor.patrol_direction = 1
+	grace = 0
+	for frame in range(2):
+		await get_tree().physics_frame
+	verify(conductor.alert, "Normal footsteps must attract the approaching conductor")
+	test_key(KEY_CTRL, true)
+	for frame in range(480):
+		await get_tree().physics_frame
+	verify(sneaking and not conductor.alert, "Quiet side refuge must break pursuit")
+	verify(conductor.position.z > player.position.z + 8, "Conductor must pass a quiet porter")
+	verify(run.recovered == 0 and run.composure > 50, "Hiding should not force a capture")
+	run.take(1, 20, 999)
+	conductor.position.z = player.position.z - 3
+	for frame in range(2):
+		await get_tree().physics_frame
+	verify(conductor.alert, "A carried bell must betray an otherwise quiet porter")
+	run.inventory.clear()
+	test_key(KEY_CTRL, false)
+	grace = 10
+	conductor.position.z = -78
 
 func walk_test_to(target: Vector3) -> bool:
 	var frames := 0

@@ -17,7 +17,8 @@ Choose **Board a new night** for a random ticket, or **Daily ticket** for the da
 | Select a satchel slot | 1–5 |
 | Drop the selected relic | X |
 | Choose a free upgrade at the counter | 1, 2 or 3 |
-| Turn the timetable at the counter | T (costs 10 seconds) |
+| Turn the timetable at the counter | T (2 pressure + 10 seconds) |
+| Route ledger / switchboard | Tab |
 | Leave with your debt paid | Q at the counter |
 | Pause / resume | Escape |
 | Lantern on / off | L |
@@ -34,7 +35,7 @@ Pause automatically stops the clock when the window loses focus. Sensitivity, so
 
 The first two deliveries each grant a free upgrade. Choose a larger satchel, a quicker stride, or quiet lining. The capacity upgrade can be chosen twice, for five slots.
 
-The conductor walks the central aisle. Give him space. Hold Ctrl and move to the side to let him pass. Running and bells attract him from farther away. Staying very close drains composure. If he catches you, he returns your current freight to its displays and costs you 15 seconds; your savings and upgrades are safe.
+The conductor walks the central aisle. Give him space. Hold Ctrl and step into a gap beside the furniture to let him pass. The HUD confirms when you are quiet enough. A carried bell can betray your hiding place: drop it, carry aurora to muffle it, or keep moving. Running attracts him from farther away. Staying very close drains composure. If he catches you, he returns your current freight to its displays and costs you 15 seconds; your savings and upgrades are safe.
 
 The exchange is a sanctuary. The conductor cannot enter it. T moves the last carriage to the front, shortening some routes—but the conductor travels with his carriage. Listen for his chime and watch for the red lantern.
 
@@ -59,7 +60,7 @@ Four travelers have unfinished business. Speak with E when facing one nearby. Ea
 
 ## The switchboard and resonances
 
-At the exchange, press Tab and use the arrows to swap neighboring carriages. Each swap costs six seconds. The clock display updates after each swap; ordinary planning time is paused. The exchange cannot move. The T lever rotates the last carriage to the front for ten seconds. Passengers, freight and the conductor all travel with their carriage.
+At the exchange, press Tab and use the arrows to swap neighboring carriages. Each swap costs 1 pressure and six seconds. The clock and pressure displays update after each swap; ordinary planning time is paused. The exchange cannot move. The T lever rotates the last carriage to the front for 2 pressure and ten seconds. Passengers, freight and the conductor all travel with their carriage.
 
 Three pairings awaken bonuses when the rooms are neighbors:
 
