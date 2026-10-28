@@ -6,9 +6,15 @@ signal play_requested(daily: bool)
 signal resume_requested
 signal quit_requested
 signal setting_changed(key: String, value: float)
+signal endless_requested
+signal next_service_requested
 var root: Control
 var hud: Control
 var menu: Control
+var menu_shade: ColorRect
+var guide_body: Label
+var guide_heading: Label
+var guide_text := ""
 var heading: Label
 var subtitle: Label
 var bank_label: Label
@@ -30,6 +36,7 @@ var pale := Color("efe4cf")
 var menu_buttons: VBoxContainer
 var settings_box: VBoxContainer
 var mode := "title"
+var route_mode := false
 var best := 0
 
 func _ready() -> void:
@@ -60,15 +67,15 @@ func _ready() -> void:
 		var slot := label(bottom, Vector2(18 + i * 244, 64), "", 14)
 		slot.size = Vector2(233, 55)
 		inventory_labels.append(slot)
-	label(bottom, Vector2(18, 122), "WASD  WALK     SHIFT  RUN     CTRL  SNEAK     E  INTERACT     F  FOLD HOME     X  DROP     T  TIMETABLE     ESC  PAUSE", 11)
+	label(bottom, Vector2(18, 122), "WASD  WALK     SHIFT  RUN     CTRL  SNEAK     E  INTERACT     F  FOLD HOME     TAB  ROUTE     X  DROP     T  TIMETABLE     ESC  PAUSE", 11)
 	stamina = bar(hud, Vector2(1050, 520), Vector2(200, 4), Color("9fcac2"))
 	notice_label = label(hud, Vector2(160, 450), "", 21, true)
 	notice_label.size.x = 960
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu = Control.new()
 	root.add_child(menu)
-	rect(menu, Vector2.ZERO, Vector2(1280, 720), Color(0.018, 0.032, 0.05, 0.91))
-	rect(menu, Vector2(62, 55), Vector2(2, 610), gold)
+	menu_shade = rect(menu, Vector2.ZERO, Vector2(1280, 720), Color(0.018, 0.032, 0.05, 0.91))
+	rect(menu, Vector2(62, 55), Vector2(2, 620), gold)
 	label(menu, Vector2(92, 56), "NIGHT SERVICE  /  EST. 1893", 14).modulate = gold
 	heading = label(menu, Vector2(90, 103), "THE MIDNIGHT\nEXCHANGE", 60, true)
 	heading.add_theme_color_override("font_color", pale)
@@ -82,9 +89,12 @@ func _ready() -> void:
 	menu.add_child(menu_buttons)
 	var rules := rect(menu, Vector2(780, 94), Vector2(410, 526), Color(0.06, 0.1, 0.13, 0.96))
 	rect(rules, Vector2(0, 0), Vector2(410, 2), gold)
-	label(rules, Vector2(28, 24), "A PORTER'S FIELD GUIDE", 22, true)
-	var guide := "01   TAKE WHAT SHOULD NOT EXIST\nExplore seven carriages. Carry three relics.\nDeeper freight pays more. E to collect.\n\n02   MAKE IT BACK TO THE COUNTER\nBank £600 before dawn to buy your freedom.\nUnbanked freight is lost when time runs out.\n\n03   PACK WITH INTENTION\nHours buy time. Bells multiply a delivery.\nDoorways fold you home. Aurora calms you.\n\n04   THE CONDUCTOR IS LISTENING\nRun when safe. Sneak off the central aisle\nto pass him. Bells carry farther than footsteps.\nCaught? Lose freight and 15s, not your savings.\n\n05   YOUR FIRST TWO DELIVERIES\nEarn a free upgrade at the exchange.\nT brings the last car to the front for 10s.\nEscape early with Q once your debt is paid."
-	label(rules, Vector2(28, 70), guide, 14)
+	guide_heading = label(rules, Vector2(28, 24), "A PORTER'S FIELD GUIDE", 22, true)
+	var guide := "01   TAKE WHAT SHOULD NOT EXIST\nExplore seven carriages. Carry three relics.\nDeeper freight pays more. E to collect.\n\n02   MAKE IT BACK TO THE COUNTER\nBank £600 before dawn to buy your freedom.\nUnbanked freight is lost when time runs out.\n\n03   PACK WITH INTENTION\nHours buy time. Bells multiply a delivery.\nDoorways fold you home. Aurora calms you.\n\n04   THE CONDUCTOR IS LISTENING\nRun when safe. Sneak off the central aisle\nto pass him. Bells carry farther than footsteps.\nCaught? Freight resets; lose 15s, not savings.\n\n05   YOUR FIRST TWO DELIVERIES\nEarn a free upgrade at the exchange.\nT brings the last car to the front for 10s.\nEscape early with Q once your debt is paid."
+	guide_text = guide
+	guide_body = label(rules, Vector2(28, 70), guide, 14)
+	guide_body.size = Vector2(354, 430)
+	guide_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	settings_box = VBoxContainer.new()
 	settings_box.position = Vector2(94, 465)
 	settings_box.size = Vector2(530, 170)
@@ -162,6 +172,8 @@ func button(text: String, action: Callable) -> void:
 	menu_buttons.add_child(item)
 
 func show_title(record: int) -> void:
+	reset_guide()
+	subtitle.add_theme_font_size_override("font_size", 17)
 	mode = "title"
 	best = record
 	menu.show()
@@ -171,9 +183,12 @@ func show_title(record: int) -> void:
 	subtitle.text = "The last train carries things the world forgot.\nYou owe the conductor £600. Dawn is four and a half minutes away. Bring back something worth your freedom.\n\nBest exchange: £%d" % best
 	button("BOARD A NEW NIGHT   →", func(): play_requested.emit(false))
 	button("DAILY TICKET   /   SAME TRAIN FOR EVERYONE", func(): play_requested.emit(true))
+	button("THE LONG WAY HOME   /   ENDLESS SERVICES", func(): endless_requested.emit())
 	button("SETTINGS & CONTROLS", show_settings)
 
 func show_pause() -> void:
+	reset_guide()
+	subtitle.add_theme_font_size_override("font_size", 17)
 	mode = "pause"
 	menu.show()
 	hud.hide()
@@ -185,6 +200,8 @@ func show_pause() -> void:
 	button("ABANDON THIS TICKET", func(): quit_requested.emit())
 
 func show_settings() -> void:
+	reset_guide()
+	subtitle.add_theme_font_size_override("font_size", 17)
 	clear_buttons()
 	menu_buttons.hide()
 	settings_box.show()
@@ -217,13 +234,28 @@ func show_settings() -> void:
 		else: show_title(best))
 	settings_box.add_child(back)
 
-func show_result(run: MidnightRun, record: int) -> void:
+func show_result(run: MidnightRun, record: int, service := 0, total := 0) -> void:
+	subtitle.add_theme_font_size_override("font_size", 17)
+	menu_shade.color.a = 0.65 if run.won else 0.91
+	guide_heading.text = "THE FIRST MORNING" if run.won else "ANOTHER NIGHT"
+	guide_body.add_theme_font_size_override("font_size", 16)
+	var epilogue := "The train stops at a platform that was not on the timetable. The air smells of rain on warm stone.\n\n" if run.won else "The conductor closes his ledger. Your savings are still there, in ink that never dries.\n\nHe offers you another ticket. You know the carriages now. You know what the bells cost.\n\nYou know there is a way home.\n\n"
+	for identity in run.commissions:
+		epilogue += "%s\n%s\n\n" % [MidnightPassenger.NAMES[identity].trim_prefix("THE "), MidnightPassenger.THANKS[identity]]
+	if run.won and run.commissions.is_empty():
+		epilogue += "You step onto the platform alone. Behind the windows, the passengers watch you go.\n\nPerhaps, on another night, there will be time for them too."
+	guide_body.text = epilogue
 	mode = "result"
 	menu.show()
 	hud.hide()
 	clear_buttons()
 	heading.text = "A DEBT PAID.\nA DAWN EARNED." if run.won else "SOME DEBTS\nOUTLIVE THE NIGHT."
-	subtitle.text = "£%d exchanged  /  £%d required\n%d deliveries · %d folds · %d conductor encounters\nBest exchange: £%d\n\n%s\nTicket %d" % [run.banked, MidnightRun.TARGET, run.deliveries, run.folds, run.recovered, record, "You step off the train with your name intact." if run.won else "The conductor offers you another night. Pack differently.", run.seed_value]
+	subtitle.text = "£%d exchanged  /  £%d required\n%d deliveries · %d folds · %d encounters · %d helped\nBest exchange: £%d\n\n%s\nTicket %d" % [run.banked, MidnightRun.TARGET, run.deliveries, run.folds, run.recovered, run.commissions.size(), record, "You step off the train with your name intact." if run.won else "The conductor offers you another night. Pack differently.", run.seed_value]
+	if service > 0:
+		subtitle.add_theme_font_size_override("font_size", 15)
+		subtitle.text += "\nService %d • Running exchange £%d" % [service, total]
+		if run.won:
+			button("NEXT SERVICE   /   THE LONG WAY HOME   →", func(): next_service_requested.emit())
 	button("ANOTHER NIGHT   →", func(): play_requested.emit(false))
 	button("REPLAY THIS TICKET", func(): play_requested.emit(true))
 	button("RETURN TO TITLE", func(): quit_requested.emit())
@@ -255,3 +287,28 @@ func update(run: MidnightRun, car: int, energy: float, threat: float, message: S
 	prompt_label.text = message
 	threat_label.text = "THE CONDUCTOR IS CLOSE  /  leave the aisle, hold Ctrl, keep quiet" if threat > 0.35 else ""
 	danger.color.a = threat * 0.16
+
+func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: MidnightRun) -> void:
+	reset_guide()
+	mode = "route"
+	menu.show()
+	hud.hide()
+	clear_buttons()
+	heading.text = "THE TRAIN\nREMEMBERS"
+	subtitle.add_theme_font_size_override("font_size", 16)
+	var lines := "TIMETABLE  /  TURNS WITH THE LEVER AT THE EXCHANGE\n\n"
+	for slot in range(MidnightTrain.COUNT):
+		var remaining := 0
+		for cargo in freight:
+			if not cargo.taken and clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 0, 6) == slot:
+				remaining += 1
+		lines += "%02d   %-23s   %s\n" % [slot, train.car_name(slot).trim_prefix("THE "), "SANCTUARY" if slot == 0 else str(remaining) + " relics"]
+	subtitle.text = lines
+	button("RETURN TO THE NIGHT   /   TAB OR ESC   →", func(): resume_requested.emit())
+
+func reset_guide() -> void:
+	if is_instance_valid(guide_body):
+		guide_body.text = guide_text
+		guide_body.add_theme_font_size_override("font_size", 14)
+		guide_heading.text = "A PORTER'S FIELD GUIDE"
+		menu_shade.color.a = 0.91

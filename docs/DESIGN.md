@@ -1,24 +1,43 @@
 # The Midnight Exchange
 
-A native Windows Godot 4 game. You are the night porter on a train carrying impossible freight. Salvage cargo from unstable carriages and return it to the exchange before the train reaches dawn.
+A native Windows 10/11 game built in Godot 4.6.3. First-person magical freight salvage aboard an art-deco night train. Four-and-a-half-minute standard runs; optional escalating endless services.
 
-## Pillars
-- A coherent world: amber lamps, midnight blue landscape, brass and red velvet.
-- Physical route choices: cargo is both reward and a burden; choose when to turn back.
-- Runs that tell stories through room arrangements, freight and escalating instability.
-- Responsive controls, clear interactions and explicit danger; no unexplained failures.
+## Player decisions
 
-## Development sequence
-1. Playable foundation: movement, carriage generation, freight, extraction, results.
-2. Distinctive cargo effects and procedural routes; risk and reward choices.
-3. Art direction, sound, feedback, accessibility and tutorial.
-4. Automated simulation, Windows export, release workflow and playtesting.
+A satchel holds only three relics initially. A stolen hour extends the deadline when banked. Bells multiply the entire cargo delivery but draw the conductor. A folded doorway sacrifices its value to bring the rest home. Aurora muffles the porter and restores composure when banked.
 
-## Continuity
-Use the existing checkout; cloud tasks are isolated already. Do not create worktrees.
-Run `godot --headless --path . --editor --import` to validate resources.
-Run `godot --headless --path . -- --smoke-test` for the gameplay smoke test.
-Maintain progress here and commit meaningful milestones. Never declare the project finished until a native Windows export and the full loop have been validated. Publish using GitHub Actions when the competition ends or development is explicitly concluded.
+The timetable lever moves the last carriage to the front for ten seconds. All geometry, freight, passengers and the conductor travel consistently with the carriage. This is a physical route change, not a cosmetic label swap. The exchange is fixed and safe.
 
-## Current milestone
-Foundation in progress. No final release declared.
+Four optional passenger commissions consume particular relics in return for sealed fares. Those fares survive capture but still need to reach the counter. This trades immediate utility for story and a reliable payout. People helped appear on the dawn platform.
+
+Bank £600 to buy freedom. Leave early or pursue a larger score. Capture returns freight to its displays and costs time, preserving both savings and the possibility of recovery. The first two deliveries earn free upgrades. Endless services reset the train and increase pressure, recording an aggregate voyage best.
+
+## Art and audio
+
+Procedural 3D architecture and furnishings for an observatory, winter garden, dining room, archive, choir and final carriage. Brass, teal fan wallpaper, warm lamps, velvet and an original woven runner. A procedural aurora and passing forest establish the moving train. Original generated ambient composition, rail rhythm and effects require no external audio service. Fonts are DejaVu, with their license retained.
+
+Static carriage meshes are merged by material. A representative dining-room capture dropped from 905 to 254 draw calls (72% reduction), while preserving movable carriage roots and collision transforms. This is a draw-call comparison, not a claim about hardware frame rate. Cloud rendering uses Mesa llvmpipe, not the judges' GPUs.
+
+## Architecture
+
+Simulation/economy (`run_state.gd`) is independent of the scene tree. Main composes physics, input, persistence and interactions. Train owns architecture and route changes. Freight, passengers, conductor, UI, sound and the dawn station have separate modules. There are no network services or runtime package dependencies.
+
+## Validation
+
+- State suite: 100,026 checks, including 25,000 randomized actions across 100 seeds.
+- Scene smoke: pickup/bank, upgrades, passenger trade, actual floor and window collision, folding, conductor collision/recovery, result/route/settings UI.
+- Walking route: 228m aisle round trip, nine physical pickups, three timetable turns, £683 extraction, dawn scene and restart into a harder service.
+- Release exports use explicit checks, never stripped `assert()` calls.
+- Native Windows CI is required before a tagged release. Earlier milestone 9fdd01e passed Windows CI; current revisions must pass their own run.
+- Linux and Windows standalone exports are also tested locally (Windows through Wine). Wine supplements actual Windows CI.
+- Graphical captures inspect gameplay, menus and dawn results. No human playtest has been claimed.
+
+## Continuity and release
+
+Use the existing checkout; cloud tasks are isolated already. Do not create worktrees. Use `scripts/validate.sh`, which checks process status and engine/script errors in addition to explicit outcomes. Godot is available on PATH; writable XDG locations in this environment are `/workspace/.runtime/{data,config,cache}`. `scripts/bootstrap_godot.py` can provision checksum-verified official binaries and export templates if needed.
+
+Push verified milestones to main. Pushes create ZIP artifacts and run actual Windows tests. A `v*` tag triggers the release job only after Linux and Windows validation succeed. When competition work is explicitly concluded, publish through that GitHub Actions path. No final release has been declared yet.
+
+## Remaining release work
+
+Inspect latest route/title/results layouts, run the full validator and current native exports, push the completed revision, and verify that revision's Windows CI. Confirm release documentation and ZIP contents. Do not substitute a prior successful CI run for the current revision.

@@ -37,6 +37,17 @@ func _initialize() -> void:
 	var total := run.banked
 	check(run.bank() == 0 and run.banked == total, "No banking after ending")
 	check(not run.fold() and not run.upgrade(0), "No actions after ending")
+	var commission := MidnightRun.new()
+	check(not commission.trade(3, 75, 0), "Commission requires requested relic")
+	commission.take(3, 30, 20)
+	check(commission.trade(3, 75, 0), "Passenger accepts requested relic")
+	check(commission.inventory.is_empty() and commission.pending_fares == 75, "Sealed fare is not satchel freight")
+	check(not commission.trade(3, 75, 0), "Commission cannot be repeated")
+	commission.caught()
+	check(commission.pending_fares == 75, "Sealed fare survives confiscation")
+	check(commission.bank() == 75 and commission.banked == 75 and commission.pending_fares == 0, "Fare-only delivery banks correctly")
+	commission.finish()
+	check(not commission.trade(0, 100, 1), "No trading after ending")
 	# Random action sequences check conservation, capacity and valid selection.
 	for seed_value in range(100):
 		var rng := RandomNumberGenerator.new()

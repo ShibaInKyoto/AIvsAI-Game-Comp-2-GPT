@@ -22,6 +22,8 @@ var finished := false
 var won := false
 var selected := 0
 var collected_ids: Dictionary = {}
+var pending_fares := 0
+var commissions: Dictionary = {}
 
 func begin(ticket: int) -> void:
 	seed_value = ticket
@@ -45,15 +47,16 @@ func held_value() -> int:
 	var total := 0
 	for item in inventory:
 		total += int(item.value)
-	return roundi(total * (1.0 + 0.25 * count_kind(1)))
+	return roundi(total * (1.0 + 0.25 * count_kind(1))) + pending_fares
 
 func bank() -> int:
-	if finished or inventory.is_empty():
+	if finished or (inventory.is_empty() and pending_fares == 0):
 		return 0
 	var earned := held_value()
 	remaining = minf(remaining + count_kind(0) * 18.0, DURATION + 60)
 	if count_kind(3) > 0:
 		composure = 100
+	pending_fares = 0
 	banked += earned
 	deliveries += 1
 	if deliveries <= 2:
@@ -103,3 +106,15 @@ func tick(delta: float) -> void:
 func finish() -> void:
 	finished = true
 	won = banked >= TARGET
+
+func trade(required_kind: int, fare: int, identity: int) -> bool:
+	if finished or commissions.has(identity):
+		return false
+	for index in range(inventory.size()):
+		if inventory[index].kind == required_kind:
+			inventory.remove_at(index)
+			selected = mini(selected, maxi(0, inventory.size() - 1))
+			pending_fares += fare
+			commissions[identity] = true
+			return true
+	return false

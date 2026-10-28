@@ -4,7 +4,7 @@
 
 Windows 10/11, 64-bit. Extract the ZIP before opening TheMidnightExchange.exe. An OpenGL 3.3-capable graphics driver is required. The executable includes the game data. No installation, network connection or account is required.
 
-Choose **Board a new night** for a random ticket, or **Daily ticket** for the day's shared layout. A run lasts four and a half minutes, plus any time earned by banking stolen hours. Bank at least £600 to buy your freedom. Continue for a higher score or leave with Q at the exchange. At dawn, banked freight counts and anything still carried is lost.
+Choose **Board a new night** for a random ticket, or **Daily ticket** for the day's shared layout (UTC). A run lasts four and a half minutes, plus any time earned by banking stolen hours. Bank at least £600 to buy your freedom. Continue for a higher score or leave with Q at the exchange. At dawn, banked freight counts and anything still carried is lost.
 
 ## Controls
 
@@ -33,7 +33,7 @@ Pause automatically stops the clock when the window loses focus. Sensitivity, so
 
 The first two deliveries each grant a free upgrade. Choose a larger satchel, a quicker stride, or quiet lining. The capacity upgrade can be chosen twice, for five slots.
 
-The conductor walks the central aisle. Give him space. Hold Ctrl and move to the side to let him pass. Running and bells attract him from farther away. Staying very close drains composure. If he catches you, he confiscates the current satchel and costs you 15 seconds; your savings and upgrades are safe.
+The conductor walks the central aisle. Give him space. Hold Ctrl and move to the side to let him pass. Running and bells attract him from farther away. Staying very close drains composure. If he catches you, he returns your current freight to its displays and costs you 15 seconds; your savings and upgrades are safe.
 
 The exchange is a sanctuary. The conductor cannot enter it. T moves the last carriage to the front, shortening some routes—but the conductor travels with his carriage. Listen for his chime and watch for the red lantern.
 
@@ -45,3 +45,13 @@ Bank an early delivery for a free upgrade. A bell is worth more when the rest of
 
 Windows: `%APPDATA%/Godot/app_userdata/The Midnight Exchange/porter.json`.
 Only settings and the personal best are stored. Deleting this file resets them. There is no telemetry.
+
+## The Long Way Home
+
+For a longer challenge, choose **The Long Way Home** from the title screen. Each successful service lets you board another night. Each service gives you less starting time (down to 150 seconds) and a quicker conductor; your voyage score adds up across services. Satchel, upgrades and freight start fresh on each train. Your best voyage total is saved separately.
+
+Press Tab to open the route ledger. It shows the current order of the carriages and how much freight remains in each. The clock is paused while you read it.
+
+## The passengers
+
+Four travelers have unfinished business. Speak with E when facing one nearby. Each needs a particular kind of relic and offers a sealed fare in exchange. Accepting a commission consumes that relic; the fare does not occupy a satchel slot and survives a conductor encounter. Return to the exchange to bank it. Each passenger can be helped once per run. They travel with their carriage when you turn the timetable.

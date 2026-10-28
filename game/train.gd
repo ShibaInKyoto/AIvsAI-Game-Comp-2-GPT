@@ -155,10 +155,12 @@ func generate(seed_value: int) -> void:
 				spawn_points[index].z += group.position.z
 		else:
 			decorate_exchange()
+		batch_geometry(group)
 	current_parent = null
 	block(Vector3(0, 1.8, 9), Vector3(7, 3.6, 0.2), wood, true)
 	block(Vector3(0, 1.8, -117), Vector3(7, 3.6, 0.2), wood, true)
 	build_landscape()
+	batch_geometry(self)
 
 func decorate_exchange() -> void:
 	var brass := mat("ba9560", 0.7)
@@ -281,3 +283,37 @@ func rotate_timetable() -> Dictionary:
 
 func car_name(slot: int) -> String:
 	return NAMES[car_order[slot]]
+
+func batch_geometry(parent: Node3D) -> void:
+	if "--unbatched" in OS.get_cmdline_user_args():
+		return
+	# Merge immutable architecture by material, keeping each carriage independently movable.
+	# Collision bodies keep their exact transforms; moving scenery and transparent windows stay separate.
+	var batches: Dictionary = {}
+	for child in parent.get_children():
+		if not child is MeshInstance3D or child in scenery:
+			continue
+		var surface := child.material_override as StandardMaterial3D
+		if surface == null or surface.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+			continue
+		if not batches.has(surface):
+			var tool := SurfaceTool.new()
+			tool.set_material(surface)
+			batches[surface] = tool
+		var tool: SurfaceTool = batches[surface]
+		for index in range(child.mesh.get_surface_count()):
+			tool.append_from(child.mesh, index, child.transform)
+		for body in child.get_children():
+			if body is StaticBody3D:
+				var pose: Transform3D = child.transform * body.transform
+				child.remove_child(body)
+				parent.add_child(body)
+				body.transform = pose
+		parent.remove_child(child)
+		child.queue_free()
+	for surface in batches:
+		var item := MeshInstance3D.new()
+		var tool: SurfaceTool = batches[surface]
+		item.mesh = tool.commit()
+		item.material_override = surface
+		parent.add_child(item)
