@@ -69,5 +69,32 @@ func _initialize() -> void:
 			check(state.remaining >= 0 and state.remaining <= MidnightRun.DURATION + 60, "Time bounded")
 			check(state.selected >= 0 and state.selected < maxi(1, state.inventory.size()), "Selection in bounds")
 			previous_bank = state.banked
-	print("STATE PASS: %d checks, 100 randomized runs / 25,000 actions" % checks)
+	var boiler := MidnightRun.new()
+	check(boiler.charge_switch(2, 10) and boiler.pressure == 1 and boiler.remaining == 260, "Rotation charges pressure and time")
+	check(not boiler.charge_switch(2, 10), "No rotation without pressure")
+	check(boiler.charge_switch(1, 6) and boiler.pressure == 0, "Adjacent shunt charges pressure")
+	check(not boiler.charge_switch(-1, 6), "Negative pressure cost rejected")
+	boiler.take(0, 150, 0)
+	boiler.bank()
+	check(boiler.pressure == 1, "Bank threshold generates pressure")
+	boiler.take(0, 75, 1)
+	boiler.bank()
+	check(boiler.pressure == 1, "Small deposits cannot farm pressure")
+	boiler.take(0, 75, 2)
+	boiler.bank()
+	check(boiler.pressure == 2, "Partial deposits accumulate to threshold")
+	boiler.finish()
+	check(not boiler.charge_switch(1, 6), "No switching after ending")
+	var orders: Dictionary = {}
+	for ticket in range(1000):
+		var order := MidnightTrain.seeded_order(ticket)
+		check(order.size() == 7 and order[0] == 0, "Seeded consist preserves exchange")
+		var unique: Dictionary = {}
+		for identity in order:
+			unique[identity] = true
+		check(unique.size() == 7, "Seeded consist preserves every carriage")
+		check(order == MidnightTrain.seeded_order(ticket), "Ticket must reproduce its route")
+		orders[str(order)] = true
+	check(orders.size() > 400, "Tickets must provide broad route variety")
+	print("STATE PASS: %d checks, 100 randomized runs / 25,000 actions / 1,000 deterministic train orders" % checks)
 	quit()

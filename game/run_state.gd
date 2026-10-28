@@ -23,6 +23,8 @@ var won := false
 var selected := 0
 var collected_ids: Dictionary = {}
 var pending_fares := 0
+var pressure := 3
+var switches := 0
 var commissions: Dictionary = {}
 
 func begin(ticket: int) -> void:
@@ -57,7 +59,9 @@ func bank() -> int:
 	if count_kind(3) > 0:
 		composure = 100
 	pending_fares = 0
+	var previous_threshold := banked / 150
 	banked += earned
+	pressure = mini(6, pressure + banked / 150 - previous_threshold)
 	deliveries += 1
 	if deliveries <= 2:
 		upgrade_tokens += 1
@@ -118,3 +122,11 @@ func trade(required_kind: int, fare: int, identity: int) -> bool:
 			commissions[identity] = true
 			return true
 	return false
+
+func charge_switch(steam_cost: int, seconds: float) -> bool:
+	if finished or steam_cost <= 0 or seconds <= 0 or pressure < steam_cost or remaining <= seconds + 5:
+		return false
+	pressure -= steam_cost
+	remaining -= seconds
+	switches += 1
+	return true

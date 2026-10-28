@@ -68,3 +68,8 @@ Three pairings awaken bonuses when the rooms are neighbors:
 - **Dining room + last carriage:** passenger commissions offer 25% larger sealed fares.
 
 The switchboard shows awake and dormant pairings. Room lighting changes with the resonance. All three pairings can be awake at once, but arranging them consumes time and moves the conductor too.
+
+
+## Boiler pressure
+
+Each ticket starts with 3 pressure; the boiler holds at most 6. Every cumulative £150 banked generates one pressure, so splitting a delivery into small deposits does not create extra fuel. A full rotation costs 2 pressure and 10 seconds; an adjacent swap costs 1 pressure and 6 seconds. The switchboard displays the remaining pressure and clock. If pressure runs low, explore on foot and bring freight back. Initial carriage order varies by ticket, and freight keeps its starting value after shunting.

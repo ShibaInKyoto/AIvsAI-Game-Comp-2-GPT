@@ -6,7 +6,9 @@ const LENGTH := 18.0
 const COUNT := 7
 const NAMES := ["THE EXCHANGE", "THE OBSERVATORY", "THE WINTER GARDEN", "THE DINING ROOM", "THE ARCHIVE", "THE CHOIR", "THE LAST CARRIAGE"]
 var materials: Dictionary = {}
-var scenery: Array[Node3D] = []
+var forest_meshes: Array[MultiMesh] = []
+var forest_positions: Array[Vector3] = []
+var forest_heights: Array[float] = []
 var lamps: Array[OmniLight3D] = []
 var spawn_points: Array[Vector3] = []
 var rng := RandomNumberGenerator.new()
@@ -229,21 +231,27 @@ func build_landscape() -> void:
 	block(Vector3(0, -5, -50), Vector3(600, 0.1, 600), mat("101b2a"))
 	for index in range(100):
 		var side := -1 if index % 2 == 0 else 1
-		var x := side * rng.randf_range(16, 85)
-		var z := rng.randf_range(-160, 50)
-		var height := rng.randf_range(5, 24)
-		var tree := cylinder(Vector3(x, height / 2 - 5, z), 0.3, height, mat("111d2c"))
-		scenery.append(tree)
-		var crown := MeshInstance3D.new()
-		var cone := CylinderMesh.new()
-		cone.top_radius = 0
-		cone.bottom_radius = height * 0.25
-		cone.height = height * 0.7
-		cone.radial_segments = 6
-		crown.mesh = cone
-		crown.position.y = height * 0.15
-		crown.material_override = mat("162b3a")
-		tree.add_child(crown)
+		forest_positions.append(Vector3(side * rng.randf_range(16, 85), -5, rng.randf_range(-160, 50)))
+		forest_heights.append(rng.randf_range(5, 24))
+	# Four instanced layers render the entire moving forest in four draw calls.
+	for layer in range(4):
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 1 if layer == 0 else 0
+		mesh.bottom_radius = 1
+		mesh.height = 1
+		mesh.radial_segments = 7
+		var instances := MultiMesh.new()
+		instances.transform_format = MultiMesh.TRANSFORM_3D
+		instances.mesh = mesh
+		instances.instance_count = forest_positions.size()
+		forest_meshes.append(instances)
+		var forest := MultiMeshInstance3D.new()
+		forest.multimesh = instances
+		forest.material_override = mat(["111d2c", "142c35", "19373e", "20434a"][layer])
+		forest.custom_aabb = AABB(Vector3(-110, -10, -180), Vector3(220, 45, 260))
+		forest.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(forest)
+	update_forest()
 	var moon := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 6
@@ -266,10 +274,43 @@ func build_landscape() -> void:
 
 func _process(delta: float) -> void:
 	elapsed += delta
-	for item in scenery:
-		item.position.z += delta * 15
-		if item.position.z > 60:
-			item.position.z -= 230
+	for index in range(forest_positions.size()):
+		forest_positions[index].z += delta * 15
+		if forest_positions[index].z > 60:
+			forest_positions[index].z -= 230
+	update_forest()
+
+func update_forest() -> void:
+	for index in range(forest_positions.size()):
+		var height := forest_heights[index]
+		for layer in range(4):
+			var center := forest_positions[index]
+			var scale: Vector3
+			if layer == 0:
+				scale = Vector3(0.26, height, 0.26)
+				center.y += height * 0.5
+			else:
+				var radius: float = [0.29, 0.22, 0.14][layer - 1] * height
+				scale = Vector3(radius, [0.58, 0.45, 0.32][layer - 1] * height, radius)
+				center.y += [0.48, 0.68, 0.87][layer - 1] * height
+			var basis := Basis(Vector3.UP, index * 2.4 + layer * 0.5).scaled(scale)
+			forest_meshes[layer].set_instance_transform(index, Transform3D(basis, center))
+
+static func seeded_order(ticket: int) -> Array[int]:
+	var order: Array[int] = [0, 1, 2, 3, 4, 5, 6]
+	var random := RandomNumberGenerator.new()
+	random.seed = ticket ^ 0x1893
+	for index in range(6, 1, -1):
+		var other := random.randi_range(1, index)
+		var held := order[index]
+		order[index] = order[other]
+		order[other] = held
+	return order
+
+func shuffle_initial(ticket: int) -> Dictionary:
+	var previous := car_order.duplicate()
+	car_order = seeded_order(ticket)
+	return apply_order(previous)
 
 func rotate_timetable() -> Dictionary:
 	var previous := car_order.duplicate()
@@ -322,7 +363,7 @@ func batch_geometry(parent: Node3D) -> void:
 	# carriage roots movable and collision transforms exact; glass sorts separately.
 	var batches: Dictionary = {}
 	for child in parent.get_children():
-		if not child is MeshInstance3D or child in scenery:
+		if not child is MeshInstance3D:
 			continue
 		var eligible := true
 		for index in range(child.mesh.get_surface_count()):

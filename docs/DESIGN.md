@@ -24,9 +24,9 @@ Simulation/economy (`run_state.gd`) is independent of the scene tree. Main compo
 
 ## Validation
 
-- State suite: 100,026 checks, including 25,000 randomized actions across 100 seeds.
+- State suite: 103,035 checks, including 25,000 randomized actions across 100 seeds, plus 1,000 deterministic initial train orders.
 - Scene smoke: pickup/drop/recover/bank, upgrades, actual switchboard button and exact time charge, all three resonance effects, passenger trade, actual floor and window collision, folding, conductor collision/recovery, result/route/settings UI.
-- Walking route: 228m aisle round trip, nine physical pickups, three timetable turns, £683 extraction, dawn scene and restart into a harder service.
+- Walking route: 228m aisle round trip, twelve physical pickups, two rotations, separately timed £655 extraction, dawn scene and restart into a harder service.
 - Release exports use explicit checks, never stripped `assert()` calls.
 - Native Windows CI is required before a tagged release. Milestones 9fdd01e and f4eb370 passed Windows CI; current revisions must pass their own run.
 - Linux and Windows standalone exports are also tested locally (Windows through Wine). Wine supplements actual Windows CI.
@@ -41,3 +41,10 @@ Push verified milestones to main. Pushes create ZIP artifacts and run actual Win
 ## Remaining release work
 
 Inspect latest route/title/results layouts, run the full validator and current native exports, push the completed revision, and verify that revision's Windows CI. Confirm release documentation and ZIP contents. Do not substitute a prior successful CI run for the current revision.
+
+
+## Latest checkpoint after environment restart
+
+Initial carriage order is now deterministically shuffled per ticket. Freight prices are assigned by starting depth and remain fixed after moves. Boiler pressure starts at 3, caps at 6, and earns one per cumulative £150 banked. Rotation costs 2 pressure/10s; adjacent swaps cost 1/6s. This prevents repeated cheap rotations from replacing exploration. The smoke test uses extra pressure only for isolated geometry/resonance stress; the winning route uses normal pressure and a fresh 270-second budget after the independent navigation stress phase.
+
+The moving forest now uses four MultiMesh layers instead of individual tree nodes. Full validation passed after that change: 103,035 state checks, three smoke seeds (90210, 37, 20261028), and the physical winning-route test. A graphical capture of the new forest and updated switchboard, current Windows exports/CI, and release packaging remain outstanding. Do not declare development finished or tag a final release yet. Continue independently; the user has not stopped the competition.

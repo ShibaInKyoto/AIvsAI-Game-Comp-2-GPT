@@ -34,6 +34,7 @@ var volume := 0.65
 var best := 0
 var best_voyage := 0
 var last_ticket := 0
+var qa_seed := 90210
 var smoke := false
 var test_failed := false
 var capture := false
@@ -47,6 +48,9 @@ func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	smoke = "--smoke-test" in OS.get_cmdline_user_args() or "--soak-test" in OS.get_cmdline_user_args()
 	capture = "--capture" in OS.get_cmdline_user_args()
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--qa-seed="):
+			qa_seed = maxi(1, argument.get_slice("=", 1).to_int())
 	load_settings()
 	setup_environment()
 	sound = MidnightSound.new()
@@ -75,7 +79,7 @@ func _ready() -> void:
 	interface.set_meta("sensitivity", sensitivity)
 	interface.set_meta("volume", volume)
 	interface.set_meta("motion", motion)
-	interface.show_title(best)
+	interface.show_title(best, best_voyage)
 	build_world(90210)
 	camera.rotation_degrees = Vector3(-5, -16, 0)
 	if "--soak-test" in OS.get_cmdline_user_args():
@@ -144,6 +148,10 @@ func build_world(ticket: int) -> void:
 		passengers.append(passenger)
 	conductor = MidnightConductor.new()
 	world_root.add_child(conductor)
+	move_carriage_contents(train.shuffle_initial(ticket))
+	for cargo in freight:
+		var starting_slot := clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 1, 6)
+		cargo.value = 12 + starting_slot * 8 + rng.randi_range(0, 8)
 	build_player()
 
 func build_player() -> void:
@@ -261,7 +269,7 @@ func to_title() -> void:
 	playing = false
 	paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	interface.show_title(best)
+	interface.show_title(best, best_voyage)
 
 func shutdown() -> void:
 	playing = false
@@ -359,12 +367,11 @@ func rotate_timetable() -> void:
 	if not at_counter():
 		notify("The timetable lever is at the exchange. Return to carriage 00.")
 		return
-	if run.remaining <= 15:
-		notify("Too close to dawn to switch the train safely.")
+	if not run.charge_switch(2, 10):
+		notify("Rotation needs 2 pressure and 15 seconds. Each £150 banked earns 1 pressure.")
 		return
 	var changes := train.rotate_timetable()
 	move_carriage_contents(changes)
-	run.remaining -= 10
 	grace = maxf(grace, 5)
 	sound.play("fold", 0.7)
 	notify("The timetable turns. %s is now carriage 01. −10 seconds." % train.car_name(1).to_lower(), 5)
@@ -381,13 +388,14 @@ func move_carriage_contents(changes: Dictionary) -> void:
 	conductor.position.z = clampf(conductor.position.z + float(changes.get(conductor_slot, 0)), -110, -13)
 
 func shunt_carriages(first: int, second: int) -> void:
-	if not playing or not at_counter() or run.remaining <= 10:
+	if not playing or not at_counter() or first < 1 or second < 1 or first > 6 or second > 6 or absi(first - second) != 1:
+		return
+	if not run.charge_switch(1, 6):
 		return
 	var changes := train.swap_slots(first, second)
 	if changes.is_empty():
 		return
 	move_carriage_contents(changes)
-	run.remaining -= 6
 	grace = maxf(grace, 3)
 	sound.play("fold", 0.9)
 	interface.show_route(train, freight, run, true)
@@ -436,7 +444,7 @@ func finish_run() -> void:
 	save_settings()
 	if run.won and not smoke:
 		build_dawn()
-	interface.show_result(run, best, service, voyage_total)
+	interface.show_result(run, best, service, voyage_total, best_voyage)
 	sound.play("bank" if run.won else "caught", 0.85)
 
 func build_dawn() -> void:
@@ -522,9 +530,9 @@ func _physics_process(delta: float) -> void:
 		if run.upgrade_tokens > 0:
 			message = "FREE UPGRADE  /  1 larger satchel  ·  2 quicker stride  ·  3 quiet lining     |     E bank freight"
 		elif run.banked >= MidnightRun.TARGET:
-			message = "YOUR DEBT IS PAID  /  Q leave the train  ·  E bank more freight  ·  T shift timetable (−10s)"
+			message = "YOUR DEBT IS PAID  /  Q leave the train  ·  E bank more freight  ·  T rotate (2 pressure / 10s)"
 		else:
-			message = "E  BANK FREIGHT  /  T shift timetable (−10s)  /  First two deliveries earn upgrades."
+			message = "E  BANK FREIGHT  /  T rotate (2 pressure / 10s)  /  First two deliveries earn upgrades."
 	else:
 		var cargo := nearest_freight()
 		if cargo != null:
@@ -543,8 +551,9 @@ func _physics_process(delta: float) -> void:
 	if run.pending_fares > 0:
 		interface.manifest_label.text = "MANIFEST %d/%d   /   £%d SEALED FARES TO BANK   /   %d OF 4 PASSENGERS HELPED" % [run.inventory.size(), run.capacity, run.pending_fares, run.commissions.size()]
 	interface.room_label.text = "%02d / %s" % [car, train.car_name(car)]
+	interface.status_label.text += "   /   BOILER %d/6" % run.pressure
 	if service > 0:
-		interface.status_label.text = "SERVICE %d  /  VOYAGE £%d  /  BEST VOYAGE £%d  /  COMPOSURE %d%%" % [service, voyage_total, best_voyage, int(run.composure)]
+		interface.status_label.text = "SERVICE %d / VOYAGE £%d / BOILER %d/6 / CALM %d%%" % [service, voyage_total, run.pressure, int(run.composure)]
 	if run.finished:
 		finish_run()
 
@@ -604,9 +613,9 @@ func capture_frame() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--capture-car="):
 			var identity := clampi(argument.get_slice("=", 1).to_int(), 1, 6)
-			player.position = Vector3(0, 0.05, -identity * MidnightTrain.LENGTH + 7)
+			player.position = Vector3(0, 0.05, -train.car_order.find(identity) * MidnightTrain.LENGTH + 7)
 	if "--capture-portrait" in OS.get_cmdline_user_args():
-		player.position = Vector3(-0.7, 0.05, -8)
+		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
 	if "--capture-inventory" in OS.get_cmdline_user_args():
 		run.capacity = 4
@@ -626,7 +635,7 @@ func verify(condition: bool, message: String) -> void:
 		push_error(message)
 
 func smoke_test() -> void:
-	start_ticket(false, 90210)
+	start_ticket(false, qa_seed)
 	verify(freight.size() == 18, "Freight generation failed")
 	var cargo := freight[0]
 	player.position = cargo.position + Vector3(0, -1.3, 1.3)
@@ -643,17 +652,27 @@ func smoke_test() -> void:
 	interact()
 	verify(run.banked == value and run.inventory.is_empty(), "Banking failed")
 	verify(run.upgrade(0) and run.capacity == 4, "Upgrade failed")
-	var last_car_cargo_z := freight[15].position.z
+	var last_identity := train.car_order[6]
+	var last_cargo := freight[(last_identity - 1) * 3]
+	var last_car_cargo_z := last_cargo.position.z
 	rotate_timetable()
-	verify(train.car_order[1] == 6, "Timetable order failed")
-	verify(is_equal_approx(freight[15].position.z, last_car_cargo_z + 90), "Timetable freight transfer failed")
+	verify(train.car_order[1] == last_identity, "Timetable order failed")
+	verify(is_equal_approx(last_cargo.position.z, last_car_cargo_z + 90), "Timetable freight transfer failed")
 	var time_before_shunt := run.remaining
 	interface.show_route(train, freight, run, true)
 	(interface.route_buttons.get_child(0) as Button).pressed.emit()
 	verify(is_equal_approx(run.remaining, time_before_shunt - 6), "Shunt time cost failed")
-	shunt_carriages(2, 3)
+	verify(run.pressure == 0, "Switchboard pressure cost failed")
+	# Isolate geometry/resonance stress from normal resource scarcity.
+	run.pressure = 30
+	var desired := [0, 1, 2, 6, 3, 4, 5]
+	for target_slot in range(1, 7):
+		var current_slot := train.car_order.find(desired[target_slot])
+		while current_slot > target_slot:
+			shunt_carriages(current_slot, current_slot - 1)
+			current_slot -= 1
 	verify(train.paired(1, 2) and train.paired(4, 5) and train.paired(3, 6), "Resonance couplings failed")
-	verify(is_equal_approx(freight[15].position.z, last_car_cargo_z + 54), "Shunt freight transfer failed")
+	verify(is_equal_approx(last_cargo.position.z, last_car_cargo_z + (6 - train.car_order.find(last_identity)) * MidnightTrain.LENGTH), "Shunt freight transfer failed")
 	verify(train.swap_slots(0, 1).is_empty(), "Exchange must never move")
 	verify(passenger_fare(3) == 138, "Resonant commission bonus failed")
 	run.take(1, 20, 202)
@@ -726,17 +745,43 @@ func walk_test_to(target: Vector3) -> bool:
 	return true
 
 func soak_test() -> void:
-	start_ticket(false, 90210)
+	start_ticket(false, qa_seed)
 	grace = 99999
 	# Walk every doorway in both directions using actual CharacterBody collision.
 	verify(await walk_test_to(Vector3(0, 0, -114)), "Outbound aisle obstructed")
 	verify(await walk_test_to(Vector3(0, 0, 3)), "Inbound aisle obstructed")
-	# A strategy that reshuffles rich freight forward must be able to pay the debt.
-	for trip in range(3):
-		rotate_timetable()
+	# Navigation stress is independent of the extraction deadline. Start a fresh timed route here.
+	run.remaining = MidnightRun.DURATION
+	run.pressure = 3
+	var pickups := 0
+	var turns := 0
+	for trip in range(6):
+		if run.banked >= MidnightRun.TARGET:
+			break
+		# Bring the richest remaining carriage forward through the public controls.
+		var richest_slot := 1
+		var richest_value := -1
+		for slot in range(1, 7):
+			var value := 0
+			for cargo in freight:
+				if not cargo.taken and roundi(-cargo.position.z / MidnightTrain.LENGTH) == slot:
+					value += cargo.value
+			if value > richest_value:
+				richest_value = value
+				richest_slot = slot
+		var target_identity: int = train.car_order[richest_slot]
+		if richest_slot == 6 and run.pressure >= 2:
+			rotate_timetable()
+			turns += 1
+		elif run.pressure >= richest_slot - 1:
+			while richest_slot > 1:
+				shunt_carriages(richest_slot, richest_slot - 1)
+				richest_slot -= 1
+		interface.enter_game()
+		var target_slot := train.car_order.find(target_identity)
 		var candidates: Array[MidnightFreight] = []
 		for cargo in freight:
-			if not cargo.taken and cargo.position.z > -27 and cargo.position.z < -9:
+			if not cargo.taken and roundi(-cargo.position.z / MidnightTrain.LENGTH) == target_slot:
 				candidates.append(cargo)
 		for cargo in candidates:
 			verify(await walk_test_to(Vector3(0, 0, cargo.position.z)), "Cargo aisle unreachable")
@@ -746,6 +791,7 @@ func soak_test() -> void:
 			camera.rotation.x = 0
 			interact()
 			verify(cargo.taken, "Cargo interaction failed")
+			pickups += 1
 			player.rotation.y = 0
 			verify(await walk_test_to(Vector3(0, 0, cargo.position.z)), "Cargo exit blocked")
 		verify(await walk_test_to(Vector3(0, 0, 3)), "Exchange unreachable")
@@ -765,5 +811,5 @@ func soak_test() -> void:
 	for frame in range(30):
 		await get_tree().physics_frame
 	verify(player.is_on_floor(), "Restart after epilogue failed")
-	print("SOAK %s:" % ("FAIL" if test_failed else "PASS") + " 228m aisle round trip, 9 physical pickups, 3 timetable shifts, winning extraction £%d, dawn epilogue, escalating service restart" % winning_total)
+	print("SOAK %s:" % ("FAIL" if test_failed else "PASS") + " 228m navigation stress, %d physical pickups, %d rotations, timed extraction £%d, dawn epilogue, escalating service restart" % [pickups, turns, winning_total])
 	await shutdown()
