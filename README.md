@@ -1,1 +1,38 @@
-# AIvsAI-Game-Comp-2-GPT
+# The Midnight Exchange
+
+A native 3D game about impossible freight on the last train before dawn. Built in Godot 4.6.3 for Windows 10/11 (x64); a Linux build is also available.
+
+You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells increase the value of an entire delivery but attract attention. Bottled hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside.
+
+## Playing
+
+Download the Windows ZIP from Releases, extract it, and open **TheMidnightExchange.exe**. The game is standalone: no browser, engine installation, account, network connection or paid asset is required. Read [the player guide](PLAYER_GUIDE.md) for controls and strategies.
+
+## Development
+
+Use Godot **4.6.3 stable**, standard edition (no .NET required). Open `project.godot` in the editor, or run `godot --path .`.
+
+```sh
+# If Godot/templates are missing, download official checksum-verified binaries:
+python3 scripts/bootstrap_godot.py
+export GODOT_BIN="$PWD/.tools/godot"
+# Otherwise the validator uses godot on PATH:
+scripts/validate.sh
+mkdir -p build/windows
+godot --headless --path . --export-release Windows build/windows/TheMidnightExchange.exe
+```
+
+In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XDG_CACHE_HOME` to writable directories before invoking Godot. The development environment uses `/workspace/.runtime/{data,config,cache}`.
+
+## Organization
+
+- `game/main.gd`: input, physics, interactions, scene composition, save handling.
+- `game/run_state.gd`: independent economy and run simulation.
+- `game/train.gd`: procedural carriage architecture, scenery and timetable.
+- `game/freight.gd`, `conductor.gd`: relic presentation and threat behavior.
+- `game/interface.gd`, `sound.gd`: scalable UI and original soundscape.
+- `assets/`: original generated textures/audio and licensed DejaVu fonts.
+- `tests/`: simulation invariants; integration tests also exercise the running scene.
+- `scripts/`: reproducible asset generation, verified tool installation, validation.
+
+Pushes build downloadable native artifacts. Version tags run both Linux and native Windows tests before GitHub Actions publishes a release. See [design and progress](docs/DESIGN.md).

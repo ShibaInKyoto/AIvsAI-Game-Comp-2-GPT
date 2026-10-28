@@ -1,0 +1,283 @@
+class_name MidnightTrain
+extends Node3D
+## All structural collision lives here. Decorative details share cached materials.
+
+const LENGTH := 18.0
+const COUNT := 7
+const NAMES := ["THE EXCHANGE", "THE OBSERVATORY", "THE WINTER GARDEN", "THE DINING ROOM", "THE ARCHIVE", "THE CHOIR", "THE LAST CARRIAGE"]
+var materials: Dictionary = {}
+var scenery: Array[Node3D] = []
+var lamps: Array[OmniLight3D] = []
+var spawn_points: Array[Vector3] = []
+var rng := RandomNumberGenerator.new()
+var elapsed := 0.0
+var cars: Array[Node3D] = []
+var car_order: Array[int] = [0, 1, 2, 3, 4, 5, 6]
+var current_parent: Node3D
+var current_car := 0
+var signage: Array[Label3D] = []
+
+func mat(hex: String, metal := 0.0, emission := 0.0) -> StandardMaterial3D:
+	var key := hex + str(metal) + str(emission)
+	if materials.has(key):
+		return materials[key]
+	var result := StandardMaterial3D.new()
+	result.albedo_color = Color(hex)
+	result.metallic = metal
+	result.roughness = 0.6
+	if hex in ["3c3337", "352c30", "30282d"]:
+		result.albedo_texture = preload("res://assets/textures/wood.png")
+	elif hex == "512b3c":
+		result.albedo_color = Color.WHITE
+		result.albedo_texture = preload("res://assets/textures/runner.png")
+		result.uv1_scale = Vector3(1, 12, 1)
+	elif hex == "244c50":
+		result.albedo_texture = preload("res://assets/textures/wallpaper.png")
+		result.uv1_scale = Vector3(6, 2, 1)
+	if emission > 0:
+		result.emission_enabled = true
+		result.emission = Color(hex)
+		result.emission_energy_multiplier = emission
+	materials[key] = result
+	return result
+
+func block(pos: Vector3, size: Vector3, surface: Material, solid := false) -> MeshInstance3D:
+	var item := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	item.mesh = mesh
+	item.material_override = surface
+	item.position = pos
+	(current_parent if current_parent != null else self).add_child(item)
+	if solid:
+		var body := StaticBody3D.new()
+		var collision := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = size
+		collision.shape = shape
+		body.add_child(collision)
+		item.add_child(body)
+	return item
+
+func cylinder(pos: Vector3, radius: float, height: float, surface: Material) -> MeshInstance3D:
+	var item := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = height
+	mesh.radial_segments = 12
+	item.mesh = mesh
+	item.position = pos
+	item.material_override = surface
+	(current_parent if current_parent != null else self).add_child(item)
+	return item
+
+func sign_text(text: String, pos: Vector3, size := 36, color := Color("edcf98")) -> Label3D:
+	var label := Label3D.new()
+	label.text = text
+	label.position = pos
+	label.font = preload("res://assets/fonts/display.ttf")
+	label.font_size = size
+	label.pixel_size = 0.005
+	label.modulate = color
+	label.no_depth_test = false
+	label.outline_size = 0
+	(current_parent if current_parent != null else self).add_child(label)
+	return label
+
+func generate(seed_value: int) -> void:
+	rng.seed = seed_value
+	var wood := mat("30282d")
+	var dark := mat("121c2a")
+	var brass := mat("ba9560", 0.7)
+	var velvet := mat("59303f")
+	var teal := mat("244c50")
+	for car in range(COUNT):
+		var group := Node3D.new()
+		group.position.z = -car * LENGTH
+		add_child(group)
+		cars.append(group)
+		current_parent = group
+		current_car = car
+		var z := 0.0
+		block(Vector3(0, -0.2, z), Vector3(7, 0.4, LENGTH), wood, true)
+		block(Vector3(0, 3.7, z), Vector3(7, 0.2, LENGTH), dark, true)
+		# Brass-banded planks and patterned runner.
+		for plank in range(24):
+			var tone := "3c3337" if plank % 2 == 0 else "352c30"
+			block(Vector3(0, 0.006, z - 8.7 + plank * 0.75), Vector3(6.9, 0.01, 0.72), mat(tone))
+		block(Vector3(0, 0.025, z), Vector3(1.8, 0.025, 17.8), mat("512b3c"))
+		for side in [-1, 1]:
+			block(Vector3(side * 0.84, 0.045, z), Vector3(0.025, 0.01, 17.8), brass)
+			block(Vector3(side * 3.5, 0.62, z), Vector3(0.2, 1.24, LENGTH), teal, true)
+			block(Vector3(side * 3.5, 3.18, z), Vector3(0.2, 1.04, LENGTH), wood, true)
+			block(Vector3(side * 3.38, 1.24, z), Vector3(0.18, 0.07, LENGTH), brass)
+			block(Vector3(side * 3.38, 2.68, z), Vector3(0.18, 0.07, LENGTH), brass)
+			# Clear collision plane, visually open midnight windows.
+			var glass := mat("253e55")
+			var invisible := StandardMaterial3D.new()
+			invisible.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			invisible.albedo_color = Color(0.2, 0.3, 0.5, 0.025)
+			block(Vector3(side * 3.5, 1.9, z), Vector3(0.1, 1.55, LENGTH), invisible, true)
+			for section in range(6):
+				var sz := z - 7.5 + section * 3
+				block(Vector3(side * 3.42, 1.95, sz), Vector3(0.17, 1.45, 0.12), brass)
+				block(Vector3(side * 3.36, 0.62, sz), Vector3(0.05, 0.9, 2.6), wood)
+				block(Vector3(side * 3.32, 0.62, sz), Vector3(0.04, 0.76, 2.4), teal)
+				block(Vector3(side * 3.30, 2.6, sz + 1.25), Vector3(0.3, 1.6, 0.24), velvet)
+				block(Vector3(side * 3.3, 2.0, sz + 1.25), Vector3(0.32, 0.055, 0.27), brass)
+			for section in range(3):
+				var sz := z - 6 + section * 6
+				# Ceiling ribs imply a curved carriage roof.
+				var rib := block(Vector3(side * 2.8, 3.35, sz), Vector3(1.5, 0.08, 0.1), brass)
+				rib.rotation.z = side * 0.4
+				block(Vector3(side * 1.25, 3.55, sz), Vector3(2.0, 0.06, 0.1), brass)
+		for side in [-1, 1]:
+			block(Vector3(side * 2.38, 1.8, z - 9), Vector3(2.24, 3.6, 0.2), wood, true)
+			block(Vector3(side * 1.27, 1.75, z - 8.85), Vector3(0.09, 3.5, 0.14), brass)
+		block(Vector3(0, 3.15, z - 9), Vector3(2.5, 0.9, 0.2), wood, true)
+		signage.append(sign_text("%02d  /  %s" % [car, NAMES[car]], Vector3(0, 3.17, z - 8.86), 24))
+		for sz in [z - 5, z + 4]:
+			cylinder(Vector3(0, 3.45, sz), 0.035, 0.4, brass)
+			cylinder(Vector3(0, 3.16, sz), 0.32, 0.18, mat("ffe0a3", 0.0, 1.2))
+			cylinder(Vector3(0, 3.28, sz), 0.4, 0.05, brass)
+		var lamp := OmniLight3D.new()
+		lamp.position = Vector3(0, 2.7, z)
+		lamp.light_color = Color("ffce91")
+		lamp.light_energy = 1.3
+		lamp.omni_range = 12
+		group.add_child(lamp)
+		lamps.append(lamp)
+		if car > 0:
+			var start := spawn_points.size()
+			decorate_car(car, z)
+			for index in range(start, spawn_points.size()):
+				spawn_points[index].z += group.position.z
+		else:
+			decorate_exchange()
+	current_parent = null
+	block(Vector3(0, 1.8, 9), Vector3(7, 3.6, 0.2), wood, true)
+	block(Vector3(0, 1.8, -117), Vector3(7, 3.6, 0.2), wood, true)
+	build_landscape()
+
+func decorate_exchange() -> void:
+	var brass := mat("ba9560", 0.7)
+	block(Vector3(0, 0.6, 5.4), Vector3(4, 1.2, 1), mat("244c50"), true)
+	block(Vector3(0, 1.24, 5.4), Vector3(4.2, 0.12, 1.25), brass)
+	for x in [-1.8, 1.8]:
+		cylinder(Vector3(x, 2.25, 5.7), 0.04, 2, brass)
+	sign_text("THE MIDNIGHT\nEXCHANGE", Vector3(0, 2.35, 5.65), 62).rotation.y = PI
+	sign_text("BANK FREIGHT  /  E\nLEAVE THE TRAIN  /  Q", Vector3(0, 0.8, 4.88), 23).rotation.y = PI
+	var bell := cylinder(Vector3(-1, 1.4, 5.2), 0.15, 0.2, brass)
+	bell.rotation.z = 0.1
+	for x in [-2.8, 2.8]:
+		block(Vector3(x, 0.6, 0), Vector3(0.9, 1.2, 1.2), mat("30282d"), true)
+		cylinder(Vector3(x, 1.5, 0), 0.24, 0.6, brass)
+		cylinder(Vector3(x, 1.85, 0), 0.38, 0.15, mat("efbf87", 0, 0.5))
+
+func decorate_car(car: int, z: float) -> void:
+	var brass := mat("ba9560", 0.7)
+	var green := mat("42706a")
+	var wood := mat("30282d")
+	for side in [-1, 1]:
+		var x: float = side * 2.5
+		for section in [-1, 1]:
+			var sz: float = z + section * 4.8
+			match car:
+				1, 6:
+					block(Vector3(x, 0.45, sz), Vector3(1.25, 0.9, 2), mat("59303f"), true)
+					block(Vector3(side * 3.1, 0.95, sz), Vector3(0.22, 1.1, 2), mat("59303f"))
+					for arm in [-0.9, 0.9]:
+						block(Vector3(x, 0.9, sz + arm), Vector3(1.35, 0.12, 0.13), brass)
+				2:
+					block(Vector3(x, 0.35, sz), Vector3(1.2, 0.7, 1.6), wood, true)
+					for leaf in range(5):
+						var branch := cylinder(Vector3(x + rng.randf_range(-0.3, 0.3), 1.0 + leaf * 0.16, sz), 0.22 + leaf * 0.035, 0.55, green)
+						branch.rotation.z = rng.randf_range(-0.6, 0.6)
+				3:
+					cylinder(Vector3(x, 0.6, sz), 0.08, 1.2, brass)
+					block(Vector3(x, 1.2, sz), Vector3(1.4, 0.12, 1.7), mat("b9a69c"), true)
+					cylinder(Vector3(x, 1.3, sz), 0.25, 0.03, brass)
+					cylinder(Vector3(x, 1.55, sz), 0.05, 0.5, brass)
+				4:
+					block(Vector3(x, 1.1, sz), Vector3(1.1, 2.2, 1.8), wood, true)
+					for shelf in range(4):
+						block(Vector3(x - side * 0.56, 0.3 + shelf * 0.5, sz), Vector3(0.04, 0.06, 1.8), brass)
+						for book in range(7):
+							block(Vector3(x - side * 0.56, 0.5 + shelf * 0.5, sz - 0.72 + book * 0.23), Vector3(0.08, 0.32 + rng.randf() * 0.08, 0.15), mat(["603b45", "3c6663", "9d8155"][book % 3]))
+				5:
+					for pipe in range(5):
+						cylinder(Vector3(x, 1.25, sz - 0.6 + pipe * 0.3), 0.1, 1.8 + pipe * 0.2, brass)
+		# Pedestals sit inside the furniture line, leaving the aisle navigable.
+		var pedestal_z := z + rng.randf_range(-1.8, 1.8)
+		block(Vector3(side * 2.1, 0.45, pedestal_z), Vector3(0.85, 0.9, 0.85), wood, true)
+		block(Vector3(side * 2.1, 0.92, pedestal_z), Vector3(0.95, 0.06, 0.95), brass)
+		spawn_points.append(Vector3(side * 2.1, 1.4, pedestal_z))
+	block(Vector3(2.1, 0.45, z + 7), Vector3(0.85, 0.9, 0.85), wood, true)
+	spawn_points.append(Vector3(2.1, 1.4, z + 7))
+
+func build_landscape() -> void:
+	# Moving silhouettes establish motion without moving physics or the player.
+	block(Vector3(0, -5, -50), Vector3(600, 0.1, 600), mat("101b2a"))
+	for index in range(100):
+		var side := -1 if index % 2 == 0 else 1
+		var x := side * rng.randf_range(16, 85)
+		var z := rng.randf_range(-160, 50)
+		var height := rng.randf_range(5, 24)
+		var tree := cylinder(Vector3(x, height / 2 - 5, z), 0.3, height, mat("111d2c"))
+		scenery.append(tree)
+		var crown := MeshInstance3D.new()
+		var cone := CylinderMesh.new()
+		cone.top_radius = 0
+		cone.bottom_radius = height * 0.25
+		cone.height = height * 0.7
+		cone.radial_segments = 6
+		crown.mesh = cone
+		crown.position.y = height * 0.15
+		crown.material_override = mat("162b3a")
+		tree.add_child(crown)
+	var moon := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 6
+	sphere.height = 12
+	moon.mesh = sphere
+	moon.position = Vector3(-90, 46, -160)
+	moon.material_override = mat("dfdec6", 0, 0.6)
+	add_child(moon)
+	for i in range(100):
+		var star := MeshInstance3D.new()
+		var dot := SphereMesh.new()
+		dot.radius = 0.1 + rng.randf() * 0.12
+		dot.height = dot.radius * 2
+		dot.radial_segments = 4
+		dot.rings = 2
+		star.mesh = dot
+		star.position = Vector3(rng.randf_range(-220, 220), rng.randf_range(25, 100), rng.randf_range(-220, 60))
+		star.material_override = mat("b7d5dd", 0, 1.0)
+		add_child(star)
+
+func _process(delta: float) -> void:
+	elapsed += delta
+	for item in scenery:
+		item.position.z += delta * 15
+		if item.position.z > 60:
+			item.position.z -= 230
+
+func rotate_timetable() -> Dictionary:
+	# Structural slots never change; move complete carriages by an exact slot length.
+	# The exchange remains fixed, so the player and counter cannot be displaced.
+	var changes: Dictionary = {}
+	var previous := car_order.duplicate()
+	var last: int = car_order.pop_back()
+	car_order.insert(1, last)
+	for slot in range(1, COUNT):
+		var identity: int = car_order[slot]
+		var old_slot := previous.find(identity)
+		var offset := float(old_slot - slot) * LENGTH
+		cars[identity].position.z = -slot * LENGTH
+		signage[identity].text = "%02d  /  %s" % [slot, NAMES[identity]]
+		changes[old_slot] = offset
+	return changes
+
+func car_name(slot: int) -> String:
+	return NAMES[car_order[slot]]

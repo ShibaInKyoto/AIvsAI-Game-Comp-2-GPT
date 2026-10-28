@@ -1,235 +1,532 @@
 extends Node3D
-## Procedural train foundation. All geometry is local and requires no external assets.
+## Composition root: input, physics and presentation coordinate the isolated run simulation.
 
-const CAR_LENGTH := 18.0
-const CAR_COUNT := 7
-const SPEED := 5.0
+const SAVE_PATH := "user://porter.json"
+var run: MidnightRun
+var train: MidnightTrain
+var conductor: MidnightConductor
 var player: CharacterBody3D
 var camera: Camera3D
-var hud: Label
-var prompt: Label
-var freight: Array[Node3D] = []
-var carried := 0
-var banked := 0
-var remaining := 180.0
-var ended := false
+var interface: MidnightInterface
+var sound: MidnightSound
+var freight: Array[MidnightFreight] = []
+var world_root: Node3D
+var playing := false
+var paused := false
 var yaw := 0.0
 var pitch := 0.0
-var rng := RandomNumberGenerator.new()
+var energy := 100.0
+var sprint_exhausted := false
+var grace := 10.0
+var threat := 0.0
+var notice_time := 0.0
+var step_time := 0.0
+var elapsed := 0.0
+var movement_time := 0.0
+var sensitivity := 1.0
+var motion := 0.35
+var volume := 0.65
+var best := 0
+var last_ticket := 0
 var smoke := false
-
-func material(color: Color, metallic: float = 0.0) -> StandardMaterial3D:
-	var result := StandardMaterial3D.new()
-	result.albedo_color = color
-	result.metallic = metallic
-	result.roughness = 0.65
-	return result
-
-func box(pos: Vector3, size: Vector3, mat: Material, solid := true) -> MeshInstance3D:
-	var mesh := MeshInstance3D.new()
-	var shape := BoxMesh.new()
-	shape.size = size
-	mesh.mesh = shape
-	mesh.material_override = mat
-	mesh.position = pos
-	add_child(mesh)
-	if solid:
-		var body := StaticBody3D.new()
-		var collision := CollisionShape3D.new()
-		var volume := BoxShape3D.new()
-		volume.size = size
-		collision.shape = volume
-		body.add_child(collision)
-		mesh.add_child(body)
-	return mesh
+var capture := false
+var sneaking := false
+var test_direction := Vector3.ZERO
 
 func _ready() -> void:
-	smoke = "--smoke-test" in OS.get_cmdline_user_args()
-	rng.seed = 90210 if smoke else Time.get_ticks_usec()
+	get_tree().auto_accept_quit = false
+	smoke = "--smoke-test" in OS.get_cmdline_user_args() or "--soak-test" in OS.get_cmdline_user_args()
+	capture = "--capture" in OS.get_cmdline_user_args()
+	load_settings()
+	setup_environment()
+	sound = MidnightSound.new()
+	add_child(sound)
+	interface = MidnightInterface.new()
+	add_child(interface)
+	interface.play_requested.connect(start_ticket)
+	interface.resume_requested.connect(resume)
+	interface.quit_requested.connect(to_title)
+	interface.setting_changed.connect(change_setting)
+	interface.set_meta("sensitivity", sensitivity)
+	interface.set_meta("volume", volume)
+	interface.set_meta("motion", motion)
+	interface.show_title(best)
+	build_world(90210)
+	camera.rotation_degrees = Vector3(-5, -16, 0)
+	if "--soak-test" in OS.get_cmdline_user_args():
+		call_deferred("soak_test")
+	elif smoke:
+		call_deferred("smoke_test")
+	elif capture:
+		start_ticket(false, 90210)
+		call_deferred("capture_frame")
+
+func setup_environment() -> void:
 	var world := WorldEnvironment.new()
 	var atmosphere := Environment.new()
-	atmosphere.background_mode = Environment.BG_COLOR
-	atmosphere.background_color = Color("101a30")
+	atmosphere.background_mode = Environment.BG_SKY
+	var sky := Sky.new()
+	var sky_material := ShaderMaterial.new()
+	sky_material.shader = preload("res://game/night_sky.gdshader")
+	sky.sky_material = sky_material
+	atmosphere.sky = sky
+	atmosphere.background_color = Color("101c2c")
 	atmosphere.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	atmosphere.ambient_light_color = Color("98aec7")
-	atmosphere.ambient_light_energy = 0.65
+	atmosphere.ambient_light_color = Color("9bb3c4")
+	atmosphere.ambient_light_energy = 0.48
+	atmosphere.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	world.environment = atmosphere
 	add_child(world)
 	var moon := DirectionalLight3D.new()
-	moon.rotation_degrees = Vector3(-35, -25, 0)
-	moon.light_color = Color("8daed9")
-	moon.light_energy = 0.7
+	moon.rotation_degrees = Vector3(-32, -25, 0)
+	moon.light_color = Color("90b8dc")
+	moon.light_energy = 0.55
 	add_child(moon)
-	build_train()
+
+func build_world(ticket: int) -> void:
+	if is_instance_valid(world_root):
+		remove_child(world_root)
+		world_root.queue_free()
+	freight.clear()
+	world_root = Node3D.new()
+	add_child(world_root)
+	train = MidnightTrain.new()
+	world_root.add_child(train)
+	train.generate(ticket)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = ticket
+	for index in range(train.spawn_points.size()):
+		var cargo := MidnightFreight.new()
+		var kind := rng.randi_range(0, 3)
+		# Every journey has all tools available, with a doorway in the middle car.
+		if index < 4:
+			kind = index
+		if index == 8:
+			kind = 2
+		cargo.configure(kind, 12 + (index / 3 + 1) * 8 + rng.randi_range(0, 8), index)
+		cargo.position = train.spawn_points[index]
+		world_root.add_child(cargo)
+		freight.append(cargo)
+	conductor = MidnightConductor.new()
+	world_root.add_child(conductor)
 	build_player()
-	build_hud()
-	if "--capture" in OS.get_cmdline_user_args():
-		call_deferred("capture_frame")
-	if smoke:
-		call_deferred("smoke_test")
-	else:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-
-func capture_frame() -> void:
-	for frame in range(30):
-		await get_tree().process_frame
-	get_viewport().get_texture().get_image().save_png("/tmp/midnight-foundation.png")
-	get_tree().quit()
-
-func build_train() -> void:
-	var wood := material(Color("302a33"))
-	var brass := material(Color("b18b4d"), 0.65)
-	var velvet := material(Color("542c3b"))
-	var dark := material(Color("111b2b"))
-	for car in range(CAR_COUNT):
-		var z := -car * CAR_LENGTH
-		box(Vector3(0, -0.2, z), Vector3(7, 0.4, CAR_LENGTH), wood)
-		box(Vector3(0, 3.5, z), Vector3(7, 0.3, CAR_LENGTH), dark)
-		for side in [-1, 1]:
-			box(Vector3(side * 3.5, 0.55, z), Vector3(0.2, 1.1, CAR_LENGTH), velvet)
-			box(Vector3(side * 3.5, 2.95, z), Vector3(0.2, 1.0, CAR_LENGTH), wood)
-			for section in range(6):
-				box(Vector3(side * 3.5, 1.8, z - 7.5 + section * 3), Vector3(0.2, 1.7, 0.16), brass)
-			# Invisible glazing keeps the porter safely aboard.
-			var glass := material(Color(0.1, 0.2, 0.3, 0.12))
-			glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			box(Vector3(side * 3.5, 1.8, z), Vector3(0.1, 1.5, CAR_LENGTH), glass)
-		for edge in [-1, 1]:
-			box(Vector3(edge * 2.4, 1.7, z - 9), Vector3(2.2, 3.4, 0.2), wood)
-		box(Vector3(0, 0.015, z), Vector3(1.8, 0.03, 17.5), velvet, false)
-		var lamp := OmniLight3D.new()
-		lamp.position = Vector3(0, 2.9, z)
-		lamp.light_color = Color("ffd08b")
-		lamp.light_energy = 2.0
-		lamp.omni_range = 11
-		add_child(lamp)
-		box(Vector3(0, 3.1, z), Vector3(0.7, 0.12, 0.7), brass, false)
-		if car > 0:
-			for item in range(3):
-				var cargo := box(Vector3(rng.randf_range(-2.5, 2.5), 0.5, z + rng.randf_range(-6, 6)), Vector3(0.7, 1, 0.7), brass, false)
-				cargo.set_meta("value", rng.randi_range(2, 5) * car)
-				freight.append(cargo)
-			for side in [-1, 1]:
-				box(Vector3(side * 2.5, 0.4, z + 3), Vector3(1.2, 0.8, 2.5), velvet)
-	box(Vector3(0, 1.7, 9), Vector3(7, 3.4, 0.2), wood)
-	box(Vector3(0, 1.7, -CAR_COUNT * CAR_LENGTH + 9), Vector3(7, 3.4, 0.2), wood)
-	box(Vector3(0, 0.4, 5), Vector3(2.0, 0.8, 1), brass)
-	for i in range(80):
-		var distance := rng.randf_range(18, 90)
-		var side := -1 if i % 2 == 0 else 1
-		box(Vector3(distance * side, -3, rng.randf_range(-150, 50)), Vector3(rng.randf_range(2, 7), rng.randf_range(5, 18), 4), dark, false)
 
 func build_player() -> void:
 	player = CharacterBody3D.new()
-	player.position = Vector3(0, 0.1, 2)
+	player.position = Vector3(0, 0.05, 2.5)
+	player.floor_snap_length = 0.3
 	var collider := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.3
+	capsule.radius = 0.28
 	capsule.height = 1.7
 	collider.shape = capsule
 	collider.position.y = 0.85
 	player.add_child(collider)
 	camera = Camera3D.new()
 	camera.position.y = 1.6
-	camera.fov = 80
+	camera.fov = 78
+	camera.far = 400
 	player.add_child(camera)
-	add_child(player)
+	world_root.add_child(player)
 
-func build_hud() -> void:
-	var canvas := CanvasLayer.new()
-	add_child(canvas)
-	var panel := ColorRect.new()
-	panel.color = Color(0.025, 0.035, 0.06, 0.85)
-	panel.position = Vector2(24, 24)
-	panel.size = Vector2(650, 116)
-	canvas.add_child(panel)
-	hud = Label.new()
-	hud.position = Vector2(42, 35)
-	hud.add_theme_font_size_override("font_size", 22)
-	canvas.add_child(hud)
-	prompt = Label.new()
-	prompt.position = Vector2(42, 610)
-	prompt.add_theme_font_size_override("font_size", 22)
-	canvas.add_child(prompt)
-	var crosshair := Label.new()
-	crosshair.text = "+"
-	crosshair.position = Vector2(634, 347)
-	canvas.add_child(crosshair)
+func start_ticket(daily: bool, forced_seed := 0) -> void:
+	var ticket := forced_seed
+	if ticket == 0:
+		if daily:
+			ticket = last_ticket if interface.mode == "result" else int(Time.get_date_string_from_system(true).replace("-", ""))
+		else:
+			ticket = int(Time.get_ticks_usec() % 999999)
+	last_ticket = ticket
+	run = MidnightRun.new()
+	run.begin(ticket)
+	build_world(ticket)
+	playing = true
+	paused = false
+	yaw = 0
+	pitch = 0
+	energy = 100
+	sprint_exhausted = false
+	grace = 10
+	threat = 0
+	elapsed = 0
+	interface.enter_game()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if not smoke and not capture else Input.MOUSE_MODE_VISIBLE
+	notify("Bank £600 before dawn. The brass counter behind you is your sanctuary.", 7)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		yaw -= event.relative.x * 0.0025
-		pitch = clampf(pitch - event.relative.y * 0.0025, -1.3, 1.3)
+	if event is InputEventMouseMotion and playing and not paused and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		yaw -= event.relative.x * 0.0022 * sensitivity
+		pitch = clampf(pitch - event.relative.y * 0.0022 * sensitivity, -1.35, 1.35)
 		player.rotation.y = yaw
 		camera.rotation.x = pitch
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
-		if event.keycode == KEY_E and not ended:
-			interact()
-		if event.keycode == KEY_R and ended:
-			get_tree().reload_current_scene()
+		if event.keycode == KEY_F11:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		if event.keycode == KEY_ESCAPE and playing:
+			if paused:
+				resume()
+			else:
+				pause()
+		if not playing or paused:
+			return
+		match event.keycode:
+			KEY_E: interact()
+			KEY_F: fold_home()
+			KEY_T: rotate_timetable()
+			KEY_X: drop_selected()
+			KEY_Q:
+				if at_counter() and run.banked >= MidnightRun.TARGET:
+					finish_run()
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
+				var index := int(event.keycode - KEY_1)
+				if at_counter() and run.upgrade_tokens > 0 and index < 3:
+					if run.upgrade(index):
+						sound.play("bank", 1.2)
+						notify(["Larger satchel: one extra slot.", "Quicker stride: walk and run 20% faster.", "Quiet lining: the conductor hears less."][index])
+				elif index < run.inventory.size():
+					run.selected = index
 
-func nearest_freight() -> Node3D:
-	var nearest: Node3D = null
-	var distance := 2.3
+func pause() -> void:
+	paused = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	interface.show_pause()
+
+func resume() -> void:
+	paused = false
+	interface.enter_game()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func to_title() -> void:
+	playing = false
+	paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	interface.show_title(best)
+
+func shutdown() -> void:
+	playing = false
+	if is_instance_valid(sound):
+		sound.silence()
+	if smoke or capture:
+		OS.delay_msec(150)
+	await get_tree().create_timer(0.2).timeout
+	get_tree().quit()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		shutdown()
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and playing and not paused and not smoke and not capture:
+		pause()
+
+func at_counter() -> bool:
+	return player.position.distance_to(Vector3(0, 0, 4.3)) < 3.2
+
+func nearest_freight() -> MidnightFreight:
+	var nearest: MidnightFreight = null
+	var distance := 2.15
 	for cargo in freight:
-		var candidate := player.position.distance_to(cargo.position)
-		if candidate < distance:
+		if cargo.taken:
+			continue
+		var offset := cargo.position - camera.global_position
+		var candidate := offset.length()
+		# A generous gaze cone avoids pixel hunting while respecting facing direction.
+		if candidate < distance and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.35:
 			distance = candidate
 			nearest = cargo
 	return nearest
 
 func interact() -> void:
-	if player.position.distance_to(Vector3(0, 0, 5)) < 3:
-		banked += carried
-		carried = 0
+	if at_counter():
+		var earned := run.bank()
+		if earned > 0:
+			sound.play("bank")
+			notify("£%d exchanged. %s" % [earned, "Your debt is paid! Q at the counter to leave, or keep going." if run.banked >= MidnightRun.TARGET else "Your savings are safe."], 5)
+		else:
+			notify("The counter banks your freight. Find relics in the carriages ahead.")
 		return
 	var cargo := nearest_freight()
-	if cargo != null:
-		carried += int(cargo.get_meta("value"))
-		freight.erase(cargo)
-		cargo.queue_free()
+	if cargo == null:
+		return
+	if run.take(cargo.kind, cargo.value, cargo.serial):
+		cargo.taken = true
+		cargo.hide()
+		sound.play("take", 0.9 + cargo.kind * 0.1)
+		notify("%s  /  %s" % [cargo.title(), cargo.effect()], 3)
+	else:
+		notify("Satchel full. X drops selected freight; F uses a folded doorway.")
+
+func drop_selected() -> void:
+	if run.inventory.is_empty():
+		return
+	var item: Dictionary = run.inventory[run.selected]
+	for cargo in freight:
+		if cargo.serial == item.serial:
+			cargo.taken = false
+			cargo.position = player.position - player.transform.basis.z * 0.8 + Vector3(0, 0.6, 0)
+			cargo.position.x = clampf(cargo.position.x, -3.0, 3.0)
+			cargo.position.z = clampf(cargo.position.z, -115.5, 7.5)
+			cargo.show()
+			break
+	run.collected_ids.erase(item.serial)
+	run.inventory.remove_at(run.selected)
+	run.selected = mini(run.selected, maxi(0, run.inventory.size() - 1))
+	sound.play("click")
+
+func rotate_timetable() -> void:
+	if not at_counter():
+		notify("The timetable lever is at the exchange. Return to carriage 00.")
+		return
+	if run.remaining <= 15:
+		notify("Too close to dawn to switch the train safely.")
+		return
+	var changes := train.rotate_timetable()
+	for cargo in freight:
+		var old_slot := clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 0, 6)
+		if changes.has(old_slot):
+			cargo.position.z += float(changes[old_slot])
+	run.remaining -= 10
+	grace = maxf(grace, 5)
+	var conductor_slot := clampi(roundi(-conductor.position.z / MidnightTrain.LENGTH), 1, 6)
+	conductor.position.z = clampf(conductor.position.z + float(changes.get(conductor_slot, 0)), -110, -13)
+	sound.play("fold", 0.7)
+	notify("The timetable turns. %s is now carriage 01. −10 seconds." % train.car_name(1).to_lower(), 5)
+
+func fold_home() -> void:
+	if at_counter():
+		notify("You are already home. Save the doorway for the far carriages.")
+		return
+	if run.fold():
+		player.position = Vector3(0, 0.05, 3.6)
+		player.velocity = Vector3.ZERO
+		grace = 8
+		sound.play("fold")
+		notify("Space folds like a ticket. The counter welcomes you back.")
+	else:
+		notify("Carry a Folded doorway to fold home with F.")
+
+func caught() -> void:
+	run.caught()
+	player.position = Vector3(0, 0.05, 2.5)
+	player.velocity = Vector3.ZERO
+	grace = 12
+	conductor.position.z = -78
+	sound.play("caught")
+	notify("The conductor confiscates your freight. −15 seconds. Banked savings are safe.", 6)
+
+func finish_run() -> void:
+	run.finish()
+	playing = false
+	paused = false
+	best = maxi(best, run.banked)
+	save_settings()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	interface.show_result(run, best)
+	sound.play("bank" if run.won else "caught", 0.85)
+
+func notify(text: String, duration := 4.0) -> void:
+	interface.notice_label.text = text
+	notice_time = duration
 
 func _physics_process(delta: float) -> void:
-	if not is_instance_valid(player):
+	if not playing or paused:
 		return
-	if not ended and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var direction := Vector3(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), 0, float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W)))
-		direction = player.transform.basis * direction.normalized()
-		var speed := SPEED / (1.0 + carried * 0.009)
-		player.velocity.x = direction.x * speed
-		player.velocity.z = direction.z * speed
-		player.velocity.y -= 20 * delta
-		player.move_and_slide()
-	if not ended:
-		remaining = maxf(0, remaining - delta)
-		if remaining <= 0:
-			ended = true
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	hud.text = "THE MIDNIGHT EXCHANGE\nDawn in %d:%02d   |   Banked £%d   |   Carrying £%d\nWASD move · Mouse look · E collect / bank · Esc pause" % [int(remaining) / 60, int(remaining) % 60, banked, carried]
-	if ended:
-		prompt.text = "DAWN ARRIVES  —  £%d safely exchanged.\nUnbanked freight is lost. Press R for another journey." % banked
-	elif player.position.distance_to(Vector3(0, 0, 5)) < 3:
-		prompt.text = "E  •  Exchange your freight here. Venture deeper for more valuable cargo."
-	elif nearest_freight() != null:
-		prompt.text = "E  •  Take freight worth £%d" % int(nearest_freight().get_meta("value"))
+	elapsed += delta
+	grace = maxf(0, grace - delta)
+	notice_time = maxf(0, notice_time - delta)
+	interface.notice_label.modulate.a = minf(1, notice_time)
+	var direction := Vector3(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), 0, float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W)))
+	if smoke or capture:
+		direction = test_direction
+	sneaking = Input.is_physical_key_pressed(KEY_CTRL)
+	if energy < 2:
+		sprint_exhausted = true
+	elif energy > 25:
+		sprint_exhausted = false
+	var sprinting := Input.is_physical_key_pressed(KEY_SHIFT) and not sprint_exhausted and energy > 2 and direction.length_squared() > 0 and not sneaking
+	var speed := 5.4 * run.stride
+	if sprinting:
+		speed *= 1.65
+		energy = maxf(0, energy - delta * 23)
 	else:
-		prompt.text = "Deeper carriages hold richer freight. Return to the brass counter to bank it."
+		energy = minf(100, energy + delta * 17)
+	if sneaking:
+		speed *= 0.5
+	var moving := direction.length_squared() > 0
+	direction = direction.normalized() if smoke else player.transform.basis * direction.normalized()
+	player.velocity.x = move_toward(player.velocity.x, direction.x * speed, delta * 30)
+	player.velocity.z = move_toward(player.velocity.z, direction.z * speed, delta * 30)
+	player.velocity.y -= 22 * delta
+	player.move_and_slide()
+	if moving:
+		movement_time += delta * (1.5 if sprinting else 1.0)
+		step_time -= delta
+		if step_time <= 0:
+			sound.play("step", randf_range(0.85, 1.1), -8 if sneaking else 0)
+			step_time = 0.32 if sprinting else 0.48
+	var bob := sin(movement_time * 11) * 0.035 * motion if moving else 0.0
+	camera.position.y = lerpf(camera.position.y, (1.35 if sneaking else 1.6) + bob, delta * 12)
+	camera.rotation.z = sin(elapsed * 0.75) * 0.007 * motion
+	camera.fov = lerpf(camera.fov, 83.0 if sprinting else 78.0, delta * 5)
+	var noise := 9.0 + run.count_kind(1) * 9.0 + (7.0 if sprinting else 0.0)
+	noise -= run.ward * 4 + run.count_kind(3) * 3
+	if sneaking:
+		noise *= 0.45
+	threat = conductor.advance(delta, player.position, maxf(3, noise), grace)
+	sound.threat(delta, threat)
+	var distance := conductor.position.distance_to(player.position)
+	if distance < 9 and player.position.z < -12 and grace <= 0:
+		run.composure -= delta * (7 if conductor.alert else 3)
+	else:
+		run.composure = minf(100, run.composure + delta * 5)
+	var catch_radius := 1.1 if sneaking else 1.65
+	if grace <= 0 and (distance < catch_radius or run.composure <= 0):
+		caught()
+	if player.position.y < -4:
+		# Defensive recovery should never be needed with the continuous floor.
+		player.position = Vector3(0, 0.1, 2.5)
+		player.velocity = Vector3.ZERO
+	run.tick(delta)
+	var car := clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, MidnightTrain.COUNT - 1)
+	var message := "Explore the train. The brass counter is in carriage 00."
+	if at_counter():
+		if run.upgrade_tokens > 0:
+			message = "FREE UPGRADE  /  1 larger satchel  ·  2 quicker stride  ·  3 quiet lining     |     E bank freight"
+		elif run.banked >= MidnightRun.TARGET:
+			message = "YOUR DEBT IS PAID  /  Q leave the train  ·  E bank more freight  ·  T shift timetable (−10s)"
+		else:
+			message = "E  BANK FREIGHT  /  T shift timetable (−10s)  /  First two deliveries earn upgrades."
+	else:
+		var cargo := nearest_freight()
+		if cargo != null:
+			message = "E  %s  /  £%d  /  %s" % [cargo.title().to_upper(), cargo.value, cargo.effect()]
+		elif run.inventory.size() == run.capacity:
+			message = "SATCHEL FULL  /  Return to carriage 00. F folds home if you carry a doorway."
+	interface.update(run, car, energy, threat, message, sneaking)
+	interface.room_label.text = "%02d / %s" % [car, train.car_name(car)]
+	if run.finished:
+		finish_run()
+
+func change_setting(key: String, value: float) -> void:
+	match key:
+		"sensitivity": sensitivity = value
+		"motion": motion = value
+		"volume": volume = value
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, volume)))
+	save_settings()
+
+func load_settings() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+		if file:
+			var data = JSON.parse_string(file.get_as_text())
+			if data is Dictionary:
+				best = maxi(0, int(data.get("best", 0)))
+				sensitivity = clampf(float(data.get("sensitivity", 1)), 0.3, 2)
+				motion = clampf(float(data.get("motion", 0.35)), 0, 1)
+				volume = clampf(float(data.get("volume", 0.65)), 0, 1)
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, volume)))
+
+func save_settings() -> void:
+	if smoke or capture:
+		return
+	var file := FileAccess.open(SAVE_PATH + ".tmp", FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify({"version": 1, "best": best, "sensitivity": sensitivity, "motion": motion, "volume": volume}))
+		file.close()
+		DirAccess.rename_absolute(SAVE_PATH + ".tmp", SAVE_PATH)
+
+func capture_frame() -> void:
+	if "--capture-title" in OS.get_cmdline_user_args():
+		to_title()
+	if "--capture-car" in OS.get_cmdline_user_args():
+		player.position = Vector3(0, 0.1, -47)
+	for frame in range(40):
+		await get_tree().process_frame
+	get_viewport().get_texture().get_image().save_png("/tmp/midnight.png")
+	await shutdown()
 
 func smoke_test() -> void:
+	start_ticket(false, 90210)
 	assert(freight.size() == 18, "Freight generation failed")
 	var cargo := freight[0]
-	var value := int(cargo.get_meta("value"))
-	player.position = cargo.position
+	player.position = cargo.position + Vector3(0, -1.3, 1.3)
+	player.rotation.y = 0
+	camera.rotation = Vector3.ZERO
+	var value := cargo.value
 	interact()
-	assert(carried == value and freight.size() == 17, "Collection failed")
-	player.position = Vector3(0, 0.1, 4)
+	assert(run.inventory.size() == 1 and run.held_value() == value, "Collection failed")
+	player.position = Vector3(0, 0.1, 3.7)
 	interact()
-	assert(banked == value and carried == 0, "Banking failed")
-	remaining = 0
+	assert(run.banked == value and run.inventory.is_empty(), "Banking failed")
+	assert(run.upgrade(0) and run.capacity == 4, "Upgrade failed")
+	var last_car_cargo_z := freight[15].position.z
+	rotate_timetable()
+	assert(train.car_order[1] == 6, "Timetable order failed")
+	assert(is_equal_approx(freight[15].position.z, last_car_cargo_z + 90), "Timetable freight transfer failed")
+	# Check actual CharacterBody collision against the floor.
+	for frame in range(60):
+		await get_tree().physics_frame
+	assert(player.is_on_floor() and player.position.y > -0.1, "Floor collision failed")
+	run.take(2, 30, 100)
+	run.take(1, 20, 101)
+	player.position.z = -70
+	fold_home()
+	assert(player.position.z > 0 and run.inventory.size() == 1, "Fold failed")
+	caught()
+	assert(run.inventory.is_empty() and run.banked == value and run.recovered == 1, "Catch recovery failed")
+	run.remaining = 0
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	assert(ended, "Run completion failed")
-	print("SMOKE PASS: generation, collection, banking, run completion")
-	get_tree().quit()
+	assert(run.finished and not playing, "Run completion failed")
+	assert(interface.mode == "result", "Result UI failed")
+	print("SMOKE PASS: generation, collection, banking, upgrades, floor physics, fold, catch recovery, results")
+	await shutdown()
+
+func walk_test_to(target: Vector3) -> bool:
+	var frames := 0
+	while Vector2(player.position.x - target.x, player.position.z - target.z).length() > 0.18:
+		var offset := target - player.position
+		offset.y = 0
+		test_direction = offset.normalized()
+		await get_tree().physics_frame
+		frames += 1
+		if frames > 2400:
+			push_error("Path blocked: %s -> %s" % [player.position, target])
+			test_direction = Vector3.ZERO
+			return false
+	test_direction = Vector3.ZERO
+	for frame in range(5):
+		await get_tree().physics_frame
+	return true
+
+func soak_test() -> void:
+	start_ticket(false, 90210)
+	grace = 99999
+	# Walk every doorway in both directions using actual CharacterBody collision.
+	assert(await walk_test_to(Vector3(0, 0, -114)), "Outbound aisle obstructed")
+	assert(await walk_test_to(Vector3(0, 0, 3)), "Inbound aisle obstructed")
+	# A strategy that reshuffles rich freight forward must be able to pay the debt.
+	for trip in range(3):
+		rotate_timetable()
+		var candidates: Array[MidnightFreight] = []
+		for cargo in freight:
+			if not cargo.taken and cargo.position.z > -27 and cargo.position.z < -9:
+				candidates.append(cargo)
+		for cargo in candidates:
+			assert(await walk_test_to(Vector3(0, 0, cargo.position.z)), "Cargo aisle unreachable")
+			assert(await walk_test_to(Vector3(signf(cargo.position.x) * 0.7, 0, cargo.position.z)), "Cargo approach blocked")
+			var facing := cargo.position - camera.global_position
+			player.rotation.y = atan2(-facing.x, -facing.z)
+			camera.rotation.x = 0
+			interact()
+			assert(cargo.taken, "Cargo interaction failed")
+			player.rotation.y = 0
+			assert(await walk_test_to(Vector3(0, 0, cargo.position.z)), "Cargo exit blocked")
+		assert(await walk_test_to(Vector3(0, 0, 3)), "Exchange unreachable")
+		interact()
+		if run.upgrade_tokens > 0:
+			run.upgrade(1)
+	assert(run.banked >= MidnightRun.TARGET, "Debt cannot be paid by tested route")
+	finish_run()
+	assert(run.won and interface.mode == "result", "Winning route failed")
+	print("SOAK PASS: 228m aisle round trip, 9 physical pickups, 3 timetable shifts, winning extraction £%d" % run.banked)
+	await shutdown()

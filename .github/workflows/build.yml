@@ -1,0 +1,90 @@
+name: Native builds and tests
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GODOT_BIN: .tools/godot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .tools
+            ~/.local/share/godot/export_templates/4.6.3.stable
+          key: godot-official-4.6.3-desktop-v1
+      - name: Install verified official Godot
+        run: python3 scripts/bootstrap_godot.py
+      - name: Import and test
+        run: scripts/validate.sh
+      - name: Export native builds
+        run: |
+          mkdir -p build/windows build/linux
+          .tools/godot --headless --path . --export-release Windows build/windows/TheMidnightExchange.exe
+          .tools/godot --headless --path . --export-release Linux build/linux/TheMidnightExchange.x86_64
+          chmod +x build/linux/TheMidnightExchange.x86_64
+          timeout 45 build/linux/TheMidnightExchange.x86_64 --headless -- --smoke-test
+          cp PLAYER_GUIDE.md build/windows/READ_ME.md
+          cp PLAYER_GUIDE.md build/linux/READ_ME.md
+          cp -r assets/fonts/LICENSE.txt build/windows/FONT_LICENSE.txt
+          cp -r assets/fonts/LICENSE.txt build/linux/FONT_LICENSE.txt
+          cd build/windows && zip -9 ../TheMidnightExchange-Windows.zip *
+          cd ../linux && zip -9 ../TheMidnightExchange-Linux.zip *
+          cd .. && sha256sum *.zip > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TheMidnightExchange-Windows
+          path: build/TheMidnightExchange-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TheMidnightExchange-Linux
+          path: build/TheMidnightExchange-Linux.zip
+  windows-runtime:
+    needs: native
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TheMidnightExchange-Windows
+          path: artifact
+      - name: Run the packaged game on Windows
+        shell: pwsh
+        run: |
+          Expand-Archive artifact/TheMidnightExchange-Windows.zip game
+          foreach ($test in @("--smoke-test", "--soak-test")) {
+            $process = Start-Process -FilePath "game/TheMidnightExchange.exe" -ArgumentList @("--headless", "--fixed-fps", "120", "--", $test) -PassThru -RedirectStandardOutput "out.log" -RedirectStandardError "err.log"
+            if (-not $process.WaitForExit(90000)) { $process.Kill(); throw "Game test timed out" }
+            $output = (Get-Content out.log -Raw) + (Get-Content err.log -Raw)
+            Write-Output $output
+            if ($process.ExitCode -ne 0 -or $output -match "SCRIPT ERROR:|ERROR:|Assertion failed" -or $output -notmatch "PASS:") { throw "Game test failed" }
+          }
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [native, windows-runtime]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TheMidnightExchange-*
+          merge-multiple: true
+          path: release
+      - name: Publish competition release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd release && sha256sum *.zip > SHA256SUMS.txt && cd ..
+          gh release create "$GITHUB_REF_NAME" release/*.zip release/SHA256SUMS.txt --title "The Midnight Exchange $GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
