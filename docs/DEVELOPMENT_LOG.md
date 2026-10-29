@@ -230,3 +230,9 @@ The full validator, all three scene seeds and walking soak passed. Fresh Linux a
 The Windows preset now enables resource modification, embedding the original train-and-moon icon, game name, description and four-component version. Godot 4.6.3's built-in TemplateModifier handles this directly; no Wine or external resource editor is needed to export it. The earlier disabled setting left the executable identified as Godot Engine 4.6.3 in Explorer.
 
 The fresh executable's PE resources were independently inspected: six PNG icon sizes, ProductName The Midnight Exchange, the expected freight description and FileVersion/ProductVersion 0.2.0.0. The extracted icon was inspected. The modified executable retained its embedded game data and passed Windows-through-Wine smoke, the walking soak and a graphical title capture. The Windows CI job now checks product name, description and version shape before running its packaged runtime checks. This packaging revision still needs its own native Windows CI result. No final release has been declared.
+
+## Desktop focus and fullscreen
+
+The optional OS-input driver now moves X11 focus from the game to the desktop, verifies automatic pause and a stopped clock, then restores focus, toggles F11 into fullscreen and back, refreshes the actual client geometry and resumes with Escape. It then completes the same physical pickup, bank, upgrade, paid shunt, ledger and quit sequence. The observer reports window mode only when explicitly enabled.
+
+The continuously rendered exported Linux game passed this extended loop on ticket 63601, banking £20 without a capture. Source import and export were clean. This is evidence for these Linux OS input paths on the dedicated software display; native Windows CI remains responsible for the packaged Windows checks. No final release has been declared.

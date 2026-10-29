@@ -49,6 +49,8 @@ class NativeInputCheck:
         self.x.XKeysymToKeycode.restype = ctypes.c_uint
         self.x.XFlush.argtypes = [pointer]
         self.x.XSetInputFocus.argtypes = [pointer, ulong, integer, ulong]
+        self.x.XDefaultRootWindow.argtypes = [pointer]
+        self.x.XDefaultRootWindow.restype = ulong
         self.xtest.XTestFakeKeyEvent.argtypes = [pointer, ctypes.c_uint, integer, ulong]
         self.xtest.XTestFakeButtonEvent.argtypes = [pointer, ctypes.c_uint, integer, ulong]
         self.xtest.XTestFakeMotionEvent.argtypes = [pointer, integer, integer, integer, ulong]
@@ -148,6 +150,24 @@ class NativeInputCheck:
         self.focus_window()
         self.click(314, 442)
         self.wait(lambda s: s.get("playing") and s.get("mouse") == 2, "boarding")
+        # Losing OS focus must protect the clock; fullscreen shortcuts must
+        # still work on a pause page with ordinary keyboard/mouse focus.
+        root = self.x.XDefaultRootWindow(self.display)
+        self.x.XSetInputFocus(self.display, root, 2, 0)
+        self.x.XFlush(self.display)
+        unfocused = self.wait(lambda s: s.get("paused") and s.get("mode") == "pause",
+                              "automatic focus pause")
+        time.sleep(0.5)
+        if self.latest()["remaining"] != unfocused["remaining"]:
+            raise RuntimeError("Clock advanced after OS focus loss")
+        self.focus_window()
+        self.tap("F11")
+        self.wait(lambda s: s.get("window") == 3, "enter fullscreen")
+        self.tap("F11")
+        self.wait(lambda s: s.get("window") == 0, "return to windowed")
+        self.focus_window()
+        self.tap("Escape")
+        self.wait(lambda s: not s.get("paused") and s.get("mouse") == 2, "resume after focus loss")
         # Every shuffled first carriage has a display at x=2.1, z=-11.
         self.move("w", lambda s: s.get("z", 10) <= -10.3, "walk to first display")
         self.move("d", lambda s: s.get("x", 0) >= 0.3, "approach display")
@@ -186,9 +206,10 @@ class NativeInputCheck:
         if code != 0 or "ERROR:" in text or bank["catches"] != 0:
             raise RuntimeError("Native input check failed: " + str(code) + "\n" + text)
         result = {"passed": True, "bank": bank, "switchboard": swapped,
+                  "focus_pause": True, "fullscreen_round_trip": True,
                   "continuous_rendering": not self.checkpoint_rendering}
         (self.base / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
-        print("NATIVE INPUT PASS: OS boarding, pickup, bank, upgrade, paid shunt, ledger, "
+        print("NATIVE INPUT PASS: OS boarding, focus pause, F11, pickup, bank, upgrade, paid shunt, ledger, "
               "Tab, pause/title and quit", flush=True)
 
     def run(self):

@@ -27,7 +27,8 @@ func sample() -> void:
 		return
 	var state: Dictionary = {"playing": game.playing, "paused": game.paused,
 		"mode": game.interface.mode, "ledger": game.interface.route_commissions,
-		"mouse": Input.mouse_mode, "sensitivity": game.sensitivity}
+		"mouse": Input.mouse_mode, "sensitivity": game.sensitivity,
+		"window": DisplayServer.window_get_mode()}
 	if game.run != null:
 		state.merge({"bank": game.run.banked, "inventory": game.run.inventory.size(),
 			"capacity": game.run.capacity, "pressure": game.run.pressure,
@@ -37,7 +38,7 @@ func sample() -> void:
 			"yaw": game.yaw, "pitch": game.pitch, "seed": game.run.seed_value,
 			"counter": game.at_counter(), "elapsed": game.elapsed})
 	var signature := JSON.stringify([state.playing, state.paused, state.mode, state.ledger,
-		state.get("bank", 0), state.get("inventory", 0), state.get("capacity", 0), state.get("pressure", 0)])
+		state.window, state.get("bank", 0), state.get("inventory", 0), state.get("capacity", 0), state.get("pressure", 0)])
 	var changed := signature != previous
 	if changed:
 		previous = signature
