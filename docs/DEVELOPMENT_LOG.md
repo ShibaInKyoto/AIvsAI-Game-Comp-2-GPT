@@ -224,3 +224,9 @@ A focused review reproduced a real targeting defect: a passenger within 2.4m cou
 With walls now respected, dropping against furniture also needed a safe destination. If the intended drop spot is blocked, the relic falls at the porter's feet. Scene smoke verifies that a partition blocks a traveler and nearby freight, a clear aisle view permits interaction, and a relic dropped toward its pedestal can be recovered. Existing quiet bell-drop/recovery and organ gaze checks remain in the suite.
 
 The full validator, all three scene seeds and walking soak passed. Fresh Linux and Windows-through-Wine standalone smoke passed. The continuous-rendering OS-input driver banked £21 on ticket 574523 with no captures, then completed upgrades, switchboard clicks, ledger and menu transitions. Native Windows CI passed traveler-art revision 9372554 (run 40944559130); this targeting revision still needs its own CI result. No final release has been declared.
+
+## Windows identity in the executable
+
+The Windows preset now enables resource modification, embedding the original train-and-moon icon, game name, description and four-component version. Godot 4.6.3's built-in TemplateModifier handles this directly; no Wine or external resource editor is needed to export it. The earlier disabled setting left the executable identified as Godot Engine 4.6.3 in Explorer.
+
+The fresh executable's PE resources were independently inspected: six PNG icon sizes, ProductName The Midnight Exchange, the expected freight description and FileVersion/ProductVersion 0.2.0.0. The extracted icon was inspected. The modified executable retained its embedded game data and passed Windows-through-Wine smoke, the walking soak and a graphical title capture. The Windows CI job now checks product name, description and version shape before running its packaged runtime checks. This packaging revision still needs its own native Windows CI result. No final release has been declared.

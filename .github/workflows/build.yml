@@ -64,6 +64,9 @@ jobs:
         shell: pwsh
         run: |
           Expand-Archive artifact/TheMidnightExchange-Windows.zip game
+          $details = (Get-Item "game/TheMidnightExchange.exe").VersionInfo
+          if ($details.ProductName -ne "The Midnight Exchange" -or $details.FileDescription -ne "A night train of impossible freight") { throw "Windows game metadata is missing" }
+          if ($details.FileVersion -notmatch '^\d+\.\d+\.\d+\.\d+$') { throw "Windows game version is missing" }
           foreach ($test in @("--smoke-test", "--soak-test")) {
             $process = Start-Process -FilePath "game/TheMidnightExchange.exe" -ArgumentList @("--headless", "--fixed-fps", "120", "--", $test) -PassThru -RedirectStandardOutput "out.log" -RedirectStandardError "err.log"
             if (-not $process.WaitForExit(90000)) { $process.Kill(); throw "Game test timed out" }

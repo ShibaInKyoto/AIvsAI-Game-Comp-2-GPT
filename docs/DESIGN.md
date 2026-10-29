@@ -53,7 +53,7 @@ There are no runtime network services or package dependencies. Asset-generation 
 
 `scripts/assess_native_input.py` runs an exported Linux executable on a dedicated X11 display through OS mouse/keyboard events. An opt-in observer in `game/debug/` reports state and captures screenshots; it supplies no input or rule changes. The driver uses isolated local data and selects the launched process's window. It checks boarding, a physical pickup and deposit, an upgrade, a paid switchboard click, the passenger page, focused Tab, pause, title and quit. Continuous rendering is the default; checkpoint rendering is an explicit software-display option. This short loop is separate from full-run balance and Windows CI.
 
-GitHub Actions exports Linux and Windows ZIPs and runs the packaged game on native Windows before allowing a tagged release. Local standalone tests and Windows-through-Wine tests supplement CI. Each revision needs its own successful run; earlier results do not certify a later build. See [the development log](DEVELOPMENT_LOG.md) for implementation checkpoints and measurements.
+GitHub Actions exports Linux and Windows ZIPs and runs the packaged game on native Windows before allowing a tagged release. The Windows executable embeds the game's icon and product details through Godot's built-in resource modifier; CI verifies its metadata before running gameplay checks. Local standalone tests and Windows-through-Wine tests supplement CI. Each revision needs its own successful run; earlier results do not certify a later build. See [the development log](DEVELOPMENT_LOG.md) for implementation checkpoints and measurements.
 
 ## Competition continuity
 
