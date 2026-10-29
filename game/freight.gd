@@ -25,7 +25,7 @@ func configure(type: int, price: int, identity: int) -> void:
 func _ready() -> void:
 	visual = MODELS[kind].instantiate()
 	add_child(visual)
-	style_relic(visual)
+	apply_materials(visual, kind)
 	focus_marker = Node3D.new()
 	add_child(focus_marker)
 	var ring := MeshInstance3D.new()
@@ -57,21 +57,21 @@ func set_focused(focused: bool, can_collect := true) -> void:
 	if focused:
 		focus_caption.text = "%s  /  £%d\n%s" % [title(), value, "[E] COLLECT" if can_collect else "SATCHEL FULL"]
 
-func style_relic(node: Node) -> void:
+static func apply_materials(node: Node, relic_kind: int) -> void:
 	if node is MeshInstance3D:
 		for index in range(node.mesh.get_surface_count()):
 			var surface := node.mesh.surface_get_material(index) as StandardMaterial3D
 			if surface == null or not surface.emission_enabled:
 				continue
-			if not light_materials.has(kind):
+			if not light_materials.has(relic_kind):
 				var light := ShaderMaterial.new()
 				light.shader = preload("res://game/relic_light.gdshader")
-				light.set_shader_parameter("tint", COLORS[kind])
-				light.set_shader_parameter("relic_kind", kind)
-				light_materials[kind] = light
-			node.set_surface_override_material(index, light_materials[kind])
+				light.set_shader_parameter("tint", COLORS[relic_kind])
+				light.set_shader_parameter("relic_kind", relic_kind)
+				light_materials[relic_kind] = light
+			node.set_surface_override_material(index, light_materials[relic_kind])
 	for child in node.get_children():
-		style_relic(child)
+		apply_materials(child, relic_kind)
 
 func _process(delta: float) -> void:
 	phase += delta

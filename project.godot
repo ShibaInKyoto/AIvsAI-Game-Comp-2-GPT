@@ -15,6 +15,10 @@ window/stretch/aspect="keep"
 window/size/min_width=960
 window/size/min_height=540
 
+[layer_names]
+3d_render/layer_1="World"
+3d_render/layer_2="Satchel"
+
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"

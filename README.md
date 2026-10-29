@@ -36,6 +36,7 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 - `game/run_state.gd`: independent economy and run simulation.
 - `game/train.gd`: procedural carriage architecture, scenery and timetable.
 - `game/freight.gd`, `passenger.gd`, `conductor.gd`: relics, commissions and threat behavior.
+- `game/satchel.gd`: the porter's camera-local bag, glove and selected relic.
 - `game/dawn.gd`: the real-time station epilogue.
 - `game/title_scene.gd`: the locomotive and viaduct title tableau.
 - `game/profile.gd`: validated, replace-on-success settings and records.
@@ -46,4 +47,4 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 
 Pushes build downloadable native artifacts. Version tags run both Linux and native Windows tests before GitHub Actions publishes a release. See [design and progress](docs/DESIGN.md).
 
-Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.
+Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.

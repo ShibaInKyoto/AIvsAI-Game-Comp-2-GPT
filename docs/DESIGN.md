@@ -128,3 +128,11 @@ A full satchel can now be banked even when dropped freight is under the gaze con
 Carriage 00 prompts now direct the porter to its brass counter rather than telling them to return to the carriage they already occupy. Upgrade choices remain visible in the manifest while floor loot is targeted. Brief conductor grace is labeled as distraction, and teleport/capture clear stale proximity threat. Full validation passed, including all three scene seeds and the walking route. The return-counter view was inspected.
 
 Cloud graphical checks hit an X11 MIT-SHM access error after the execution transport changed. Restarting the task's dummy Xorg :99 with -extension MIT-SHM resolved it; the repeated capture is free of runtime errors. This is test-display configuration, not a game setting. The current server PID is 55178. Native Windows CI passed forest revision 5102c9f (40853527407), lantern alignment 099a808 (40854488305), and credits 81e2322 (40856990301). The counter revision still needs its own CI result. No final release has been declared.
+
+## The porter's satchel
+
+An original modeled leather satchel, gloved hand and uniform sleeve now frame the selected relic in first person. Selecting, dropping or banking cargo updates the presentation; the view meshes have no collision or freight identity. They remain inside the player's world clearance and cast no shadows. A separate render layer excludes the very close player flashlight, with a gentle view-only fill preserving the leather and glove detail. Camera motion settings control the small walking sway and relic drift.
+
+All four selected relics were inspected in the carriage renderer. The representative garden view adds nine draw calls (130 versus 121 before the satchel); this is not a hardware frame-rate measurement. The full state, profile, geometry, three-seed scene and walking-route suites passed. Fresh Linux standalone smoke passed, and the fresh Windows export rendered the satchel and aurora through Wine without errors. Native Windows CI remains required for this revision. scripts/model_satchel.py regenerates the new asset using the shared Blender helpers.
+
+Counter-interaction revision c37bb26 passed native Windows CI (run 40861278968). No final release has been declared.

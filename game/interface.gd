@@ -95,6 +95,8 @@ func _ready() -> void:
 	notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	notice_label.add_theme_color_override("font_outline_color", Color(0.01, 0.02, 0.03, 0.85))
+	notice_label.add_theme_constant_override("outline_size", 2)
 	menu = Control.new()
 	root.add_child(menu)
 	menu_shade = rect(menu, Vector2.ZERO, Vector2(1280, 720), Color(0.018, 0.032, 0.05, 0.91))

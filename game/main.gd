@@ -8,6 +8,7 @@ var conductor: MidnightConductor
 var player: CharacterBody3D
 var camera: Camera3D
 var lantern: SpotLight3D
+var satchel: MidnightSatchel
 var interface: MidnightInterface
 var sound: MidnightSound
 var freight: Array[MidnightFreight] = []
@@ -184,7 +185,10 @@ func build_player() -> void:
 	lantern.spot_attenuation = 1.1
 	lantern.shadow_enabled = true
 	lantern.shadow_bias = 0.04
+	lantern.light_cull_mask = 1
 	camera.add_child(lantern)
+	satchel = MidnightSatchel.new()
+	camera.add_child(satchel)
 	world_root.add_child(player)
 
 func start_ticket(daily: bool, forced_seed := 0) -> void:
@@ -547,6 +551,8 @@ func _physics_process(delta: float) -> void:
 	camera.position.y = lerpf(camera.position.y, (1.35 if sneaking else 1.6) + bob, delta * 12)
 	camera.rotation.z = sin(elapsed * 0.75) * 0.007 * motion
 	camera.fov = lerpf(camera.fov, (78.0 + 5.0 * motion) if sprinting else 78.0, delta * 5)
+	var carried_kind: int = -1 if run.inventory.is_empty() else run.inventory[run.selected].kind
+	satchel.update_cargo(carried_kind, elapsed, movement_time, moving, motion)
 	var noise := hearing_radius(sprinting, sneaking)
 	threat = conductor.advance(delta, player.position, noise, grace)
 	sound.threat(delta, threat, conductor.lantern.global_position)
@@ -660,6 +666,7 @@ func save_settings() -> void:
 		push_warning("The local profile could not be saved. This journey can continue.")
 
 func capture_frame() -> void:
+	var held_capture := -1
 	notice_time = 0
 	interface.notice_label.text = ""
 	if "--capture-dawn" in OS.get_cmdline_user_args():
@@ -694,6 +701,8 @@ func capture_frame() -> void:
 			player.position = cargo.position + Vector3(0, -1.35, 1.4)
 			camera.rotation.x = -0.15
 			grace = 999
+		elif argument.begins_with("--capture-held="):
+			held_capture = clampi(argument.get_slice("=", 1).to_int(), 0, 3)
 	if "--capture-portrait" in OS.get_cmdline_user_args():
 		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
@@ -709,10 +718,12 @@ func capture_frame() -> void:
 		player.position = Vector3(0, 0.05, window_z)
 		player.rotation.y = -PI / 2
 		visited[2] = true
-	if "--capture-inventory" in OS.get_cmdline_user_args():
+	if "--capture-inventory" in OS.get_cmdline_user_args() or held_capture >= 0:
 		run.capacity = 4
 		for kind in range(4):
 			run.take(kind, 20 + kind * 10, 700 + kind)
+		if held_capture >= 0:
+			run.selected = held_capture
 	for frame in range(40):
 		await get_tree().process_frame
 	print("RENDER: %d draw calls / %d visible objects" % [Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)])
