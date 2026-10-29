@@ -7,8 +7,7 @@ import bpy
 from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from modeling import (material, clear, box, cylinder, sphere, tube_between, export,
-                      GOLD, WOOD, VELVET, LEATHER, IVORY, TEAL, LEAF, LEAF_LIGHT,
-                      SOIL, GLASS, BLACK, PAGE, BOOKS)
+                      GOLD, WOOD, VELVET, LEATHER, IVORY, TEAL, GLASS, BLACK, BOOKS)
 
 # A two-place tufted carriage settee: two seat pads, a curved-looking back and brass piping.
 clear()
@@ -51,33 +50,9 @@ lens.rotation_mode='QUATERNION'; lens.rotation_quaternion=axis.to_track_quat('Z'
 sphere((.3,0,1.55),(.12,.12,.12),GOLD)
 export('telescope')
 
-# A winter fern: curved fronds assembled from tapered leaves, in a ribbed ceramic urn.
-clear()
-cylinder((0,0,.26),.30,.5,TEAL,32,radius_top=.39)
-cylinder((0,0,.5),.40,.06,GOLD,32)
-cylinder((0,0,.53),.34,.018,SOIL,24)
-cylinder((0,0,.07),.33,.06,GOLD,24)
-for a in range(13):
-    angle=a*math.tau/13
-    spread=.38 + .18*random.random()
-    height=.7 + .5*random.random()
-    points=[]
-    for i in range(7):
-        t=i/6
-        r=spread*t
-        p=(math.cos(angle)*r, math.sin(angle)*r, .54+height*math.sin(t*1.8))
-        points.append(p)
-        if i:
-            tube_between(points[i-1],p,.008,LEAF)
-        if 0<i<6:
-            for side in [-1,1]:
-                leaf_angle=angle+side*1.1
-                length=.2*(1-.55*t)
-                end=(p[0]+math.cos(leaf_angle)*length,p[1]+math.sin(leaf_angle)*length,p[2]+.05)
-                middle=Vector(p).lerp(Vector(end),.52)
-                leaf=sphere(middle,(.035,length*.6,.012),LEAF_LIGHT if a%3==0 else LEAF)
-                leaf.rotation_euler.z=leaf_angle-math.pi/2
-export('winter_fern')
+# Original fern geometry is also independently regenerable.
+from model_fern import build_fern
+build_fern()
 
 # An intimate restaurant table: linen, two place settings, stemware and a candle.
 clear()
