@@ -111,7 +111,17 @@ func shelter(travel: float) -> bool:
 	print("EVADE ", evasions, " time=", snappedf(game.run.remaining, 0.1), " bank=", game.run.banked, " catches=", game.run.recovered)
 	return game.playing
 
-func evaluate() -> void:
+func collect(cargo: MidnightFreight) -> bool:
+	if not await walk(Vector3(0, 0, cargo.position.z)) or not await walk(Vector3(signf(cargo.position.x) * 0.7, 0, cargo.position.z)):
+		return false
+	var facing: Vector3 = cargo.position - game.camera.global_position
+	game.player.rotation.y = atan2(-facing.x, -facing.z)
+	game.camera.rotation.x = 0
+	game.interact()
+	game.player.rotation.y = 0
+	return cargo.taken and await walk(Vector3(0, 0, cargo.position.z))
+
+func board() -> void:
 	game = load("res://game/main.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
@@ -119,6 +129,8 @@ func evaluate() -> void:
 	# not change the clock, initial grace, pressure, freight or conductor rules.
 	game.smoke = true
 	game.start_ticket(false, game.qa_seed)
+
+func pay_debt() -> bool:
 	var okay := true
 	for trip in range(8):
 		if game.run.banked >= MidnightRun.TARGET or not game.playing:
@@ -147,18 +159,7 @@ func evaluate() -> void:
 			if not cargo.taken and slot_for(cargo.position.z) == game.train.car_order.find(identity):
 				candidates.append(cargo)
 		for cargo in candidates:
-			if not await walk(Vector3(0, 0, cargo.position.z)) or not await walk(Vector3(signf(cargo.position.x) * 0.7, 0, cargo.position.z)):
-				okay = false
-				break
-			var facing: Vector3 = cargo.position - game.camera.global_position
-			game.player.rotation.y = atan2(-facing.x, -facing.z)
-			game.camera.rotation.x = 0
-			game.interact()
-			game.player.rotation.y = 0
-			if not cargo.taken:
-				okay = false
-				break
-			if not await walk(Vector3(0, 0, cargo.position.z)):
+			if not await collect(cargo):
 				okay = false
 				break
 		if not okay:
@@ -177,6 +178,19 @@ func evaluate() -> void:
 			game.run.upgrade(1)
 		print("TRIP ", trip, " bank=", game.run.banked, " time=", snappedf(game.run.remaining, 0.1))
 	okay = okay and game.run.banked >= MidnightRun.TARGET
-	print("LIVE JOURNEY ", "PASS" if okay else "FAIL", " bank=", game.run.banked, " remaining=", game.run.remaining, " catches=", game.run.recovered, " evasions=", evasions, " abandoned_bells=", abandoned_bells)
+	return okay
+
+func finish_assessment(okay: bool, label: String, all_travelers := false) -> void:
+	if okay:
+		game.test_key(KEY_Q, true)
+		game.test_key(KEY_Q, false)
+		okay = game.run.finished and game.run.won and not game.playing and game.interface.mode == "result"
+		if all_travelers:
+			okay = okay and game.run.commissions.size() == 4 and game.rescued_mask == 15
+	print(label, " ", "PASS" if okay else "FAIL", " ticket=", game.run.seed_value, " bank=", game.run.banked, " remaining=", game.run.remaining, " catches=", game.run.recovered, " evasions=", evasions, " abandoned_bells=", abandoned_bells)
 	game.test_failed = not okay
 	await game.shutdown()
+
+func evaluate() -> void:
+	await board()
+	await finish_assessment(await pay_debt(), "LIVE JOURNEY")

@@ -246,3 +246,11 @@ Reviewing the ending exposed a text-layout defect: a loss after helping all four
 The full validator passed. After the final heading adjustment, the 192 layout checks, fresh Linux standalone smoke and Windows-through-Wine smoke/soak passed. The new station and four-traveler win were inspected from the Windows executable, and a four-traveler loss was inspected at 960×540. A separate camera fixture inspected the station furnishings without UI; it is an art review, not an explorable mode or a completed playthrough.
 
 The live-conductor diagnostic was rerun after the visibility fix and still cleared tickets 90210 (£717), 37 (£632), 20261028 (£630) and 20261029 (£699), with no captures or abandoned bells. This remains a map-aware possible-route diagnostic. Native Windows CI passed targeting revision 9879840 (40945424024), Windows branding 2383095 (40945823609) and desktop-input checkpoint 8780a7c (40946197039). This station/layout revision still needs its own native CI result. No final release has been declared.
+
+## All four mornings through the run
+
+A second optional live-route diagnostic now visits all four travelers through their actual gaze/E interactions, banks their fares, earns the remaining freedom fare and leaves through Q. It reuses the existing movement, collection and profit helpers. Both diagnostics now verify the actual winning result rather than stopping at a sufficient bank balance. The all-traveler route also checks that the winning hook records all four notebook bits, with profile writes suppressed.
+
+On ticket 90210, the first route was caught after helping three travelers. The revised policy banked the sealed fares, used an earned stride upgrade, reclaimed the remaining tool and completed the fourth request. It banked £389 in sealed fares after the current resonance quote, earned £745 in total, and won with about 138.8 seconds remaining, one capture, three evasions and no abandoned bells. This was an integrated run under ordinary threat, clock and economy rules; the porter still has full map knowledge and is not a novice-playability assessment. The original profit route also passed after helper extraction, banking £717 and winning through Q.
+
+Station/layout revision f1542d1 passed native Windows CI (40949377678). No game rules changed in this diagnostic checkpoint, and no final release has been declared.
