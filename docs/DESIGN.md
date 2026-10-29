@@ -72,3 +72,11 @@ Continue independent development after this checkpoint; no final release has bee
 Native Windows CI passed title/profile checkpoint 8873f35 (run 40840321227). The Windows export also rendered the title scene under Wine and passed exported smoke, including profile replacement.
 
 A later recovery audit found that dropped-and-recollected freight returned to the drop location on capture despite the display-return rule. Each relic now tracks its display independently of its current physical location. Both positions follow their respective carriage during shunting; capture restores the relic to the moving display. The scene regression drops/recollects a real relic at the exchange, moves its original carriage away and back, then checks actual conductor capture restores it and releases its collection identity. All three ticket seeds and the physical winning route passed. This recovery change needs its own native Windows CI result.
+
+## Targeting and stealth clarity
+
+The relic under the player's gaze now shows a brass focus ring and a world-space name/value prompt. A full satchel changes that prompt to SATCHEL FULL. Passenger interactions suppress relic highlighting so the displayed target matches E's action. The gameplay screenshot now shows the modeled aurora bottle and current HUD. Loss text explicitly says that each new ticket starts fresh, avoiding a suggestion that banked cash carries between independent runs.
+
+The quiet encounter regression now uses a real bell: it attracts pursuit, is dropped in a refuge, lets the live conductor pass, and is collected again with E. Full validation passed before the final text-only clarification: state, profile, geometry, three smoke seeds, and the physical route. Cargo-recovery commit 9ba8837 passed native Windows CI (run 40840647014).
+
+A diagnostic attempt to run the center-aisle collection bot with the conductor enabled failed (£356), because that bot walks straight through him and repeatedly gets caught. The experimental flag was removed. This does not establish human balance; no live-threat winning route or human playtest has been claimed. Future balance work should use a threat-aware route policy, retaining the separate deterministic navigation/economy checks and genuine encounter tests. No final release declaration has been made.

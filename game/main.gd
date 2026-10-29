@@ -11,6 +11,7 @@ var lantern: SpotLight3D
 var interface: MidnightInterface
 var sound: MidnightSound
 var freight: Array[MidnightFreight] = []
+var focused_freight: MidnightFreight
 var passengers: Array[MidnightPassenger] = []
 var world_root: Node3D
 var atmosphere: Environment
@@ -117,6 +118,7 @@ func build_world(ticket: int) -> void:
 		remove_child(world_root)
 		world_root.queue_free()
 	freight.clear()
+	focused_freight = null
 	passengers.clear()
 	world_root = Node3D.new()
 	world_root.name = "NightService"
@@ -130,7 +132,7 @@ func build_world(ticket: int) -> void:
 	for index in range(train.spawn_points.size()):
 		var cargo := MidnightFreight.new()
 		var kind := rng.randi_range(0, 3)
-		# Every journey has all tools available, with a doorway in the middle car.
+		# Every journey has all four tools available, including an extra doorway.
 		if index < 4:
 			kind = index
 		if index == 8:
@@ -286,6 +288,7 @@ func build_title_world() -> void:
 		remove_child(world_root)
 		world_root.queue_free()
 	freight.clear()
+	focused_freight = null
 	passengers.clear()
 	var platform := MidnightTitle.new()
 	platform.camera_motion = motion
@@ -555,6 +558,15 @@ func _physics_process(delta: float) -> void:
 		visited[identity] = true
 		if notice_time < 1:
 			notify(["", "The stars here shine inward. Someone has wound them too tightly.", "In the winter garden, everything grows toward yesterday.", "Every place is set. None of the chairs are warm.", "The ledger has your handwriting. The dates are all tomorrow.", "The bells have no clappers. They ring when you remember them.", "The last carriage smells like the home you have not found yet."][identity], 5)
+	var cargo := nearest_freight()
+	var passenger := nearest_passenger()
+	var focus := cargo if passenger == null else null
+	if focused_freight != focus:
+		if is_instance_valid(focused_freight):
+			focused_freight.set_focused(false)
+		focused_freight = focus
+	if focused_freight != null:
+		focused_freight.set_focused(true, run.inventory.size() < run.capacity)
 	var message := "Explore the train. The brass counter is in carriage 00."
 	if at_counter():
 		if run.upgrade_tokens > 0:
@@ -564,15 +576,12 @@ func _physics_process(delta: float) -> void:
 		else:
 			message = "E  BANK FREIGHT  /  T rotate (2 pressure / 10s)  /  First two deliveries earn upgrades."
 	else:
-		var cargo := nearest_freight()
 		if cargo != null:
 			message = "E  %s  /  £%d  /  %s" % [cargo.title().to_upper(), cargo.value, cargo.effect()]
 		elif run.inventory.size() == run.capacity:
 			message = "SATCHEL FULL  /  Return to carriage 00. F folds home if you carry a doorway."
-	var counter_cargo := nearest_freight() if at_counter() else null
-	if counter_cargo != null:
-		message = "E  %s  /  £%d  /  %s" % [counter_cargo.title().to_upper(), counter_cargo.value, counter_cargo.effect()]
-	var passenger := nearest_passenger()
+	if at_counter() and cargo != null:
+		message = "E  %s  /  £%d  /  %s" % [cargo.title().to_upper(), cargo.value, cargo.effect()]
 	if passenger != null and not at_counter():
 		message = "E  %s  /  %s for a £%d sealed fare" % [MidnightPassenger.NAMES[passenger.identity], MidnightFreight.TYPES[MidnightPassenger.NEEDS[passenger.identity]], passenger_fare(passenger.identity)]
 		if passenger.completed:
@@ -821,12 +830,28 @@ func test_quiet_encounter() -> void:
 	verify(sneaking and not conductor.alert, "Quiet side refuge must break pursuit")
 	verify(conductor.position.z > player.position.z + 8, "Conductor must pass a quiet porter")
 	verify(run.recovered == 0 and run.composure > 50, "Hiding should not force a capture")
-	run.take(1, 20, 999)
+	var bell := freight[1]
+	run.take(bell.kind, bell.value, bell.serial)
+	bell.taken = true
+	bell.hide()
 	conductor.position.z = player.position.z - 3
 	for frame in range(2):
 		await get_tree().physics_frame
 	verify(conductor.alert, "A carried bell must betray an otherwise quiet porter")
+	player.rotation.y = PI
+	drop_selected()
+	for frame in range(480):
+		await get_tree().physics_frame
+	verify(not conductor.alert and conductor.position.z > player.position.z + 8 and run.recovered == 0, "Dropping a bell must allow a quiet escape")
+	interact()
+	verify(bell.taken and run.count_kind(1) == 1, "A bell dropped for stealth must remain recoverable")
+	# Restore the encounter fixture before the independent collision/capture checks.
 	run.inventory.clear()
+	run.collected_ids.erase(bell.serial)
+	bell.position = bell.display_position
+	bell.taken = false
+	bell.show()
+	player.rotation.y = 0
 	test_key(KEY_CTRL, false)
 	grace = 10
 	conductor.position.z = -78

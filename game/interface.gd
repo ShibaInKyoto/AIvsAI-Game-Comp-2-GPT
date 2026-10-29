@@ -297,7 +297,7 @@ func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage
 	menu_shade.color.a = 0.65 if run.won else 0.91
 	guide_heading.text = "THE FIRST MORNING" if run.won else "ANOTHER NIGHT"
 	guide_body.add_theme_font_size_override("font_size", 16)
-	var epilogue := "The train stops at a platform that was not on the timetable. The air smells of rain on warm stone.\n\n" if run.won else "The conductor closes his ledger. Your savings are still there, in ink that never dries.\n\nHe offers you another ticket. You know the carriages now. You know what the bells cost.\n\nYou know there is a way home.\n\n"
+	var epilogue := "The train stops at a platform that was not on the timetable. The air smells of rain on warm stone.\n\n" if run.won else "The conductor closes his ledger. The fare you paid was not enough to buy back your name.\n\nHe offers you another ticket. You know the carriages now. You know what the bells cost.\n\nYou know there is a way home.\n\n"
 	for identity in run.commissions:
 		epilogue += "%s\n%s\n\n" % [MidnightPassenger.NAMES[identity].trim_prefix("THE "), MidnightPassenger.THANKS[identity]]
 	if run.won and run.commissions.is_empty():
@@ -308,7 +308,7 @@ func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage
 	hud.hide()
 	clear_buttons()
 	heading.text = "A DEBT PAID.\nA DAWN EARNED." if run.won else "SOME DEBTS\nOUTLIVE THE NIGHT."
-	subtitle.text = "£%d exchanged  /  £%d required\n%d deliveries · %d folds · %d encounters · %d helped\nBest exchange: £%d\n\n%s\nTicket %d" % [run.banked, MidnightRun.TARGET, run.deliveries, run.folds, run.recovered, run.commissions.size(), record, "You step off the train with your name intact." if run.won else "The conductor offers you another night. Pack differently.", run.seed_value]
+	subtitle.text = "£%d exchanged  /  £%d required\n%d deliveries · %d folds · %d encounters · %d helped\nBest exchange: £%d\n\n%s\nTicket %d" % [run.banked, MidnightRun.TARGET, run.deliveries, run.folds, run.recovered, run.commissions.size(), record, "You step off the train with your name intact." if run.won else "Each ticket starts fresh. Try another route, or pack differently.", run.seed_value]
 	if service > 0:
 		subtitle.add_theme_font_size_override("font_size", 15)
 		subtitle.text += "\nService %d • Voyage £%d • Best £%d" % [service, total, voyage_record]
