@@ -43,13 +43,13 @@ def clear():
     bpy.ops.object.delete(use_global=False)
 
 
-def finish(obj, mat, bevel=0, smooth=False):
+def finish(obj, mat, bevel=0, smooth=False, bevel_segments=3):
     obj.data.materials.append(mat)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     if bevel:
         mod = obj.modifiers.new('Soft manufactured edges', 'BEVEL')
         mod.width = bevel
-        mod.segments = 3
+        mod.segments = bevel_segments
         bpy.ops.object.modifier_apply(modifier=mod.name)
         normal = obj.modifiers.new('Weighted corner normals', 'WEIGHTED_NORMAL')
         bpy.ops.object.modifier_apply(modifier=normal.name)
@@ -59,19 +59,19 @@ def finish(obj, mat, bevel=0, smooth=False):
     return obj
 
 
-def box(pos, size, mat, bevel=.025):
+def box(pos, size, mat, bevel=.025, bevel_segments=3):
     bpy.ops.mesh.primitive_cube_add(size=1, location=pos)
     obj = bpy.context.object
     obj.scale = size
-    return finish(obj, mat, bevel)
+    return finish(obj, mat, bevel, bevel_segments=bevel_segments)
 
 
-def cylinder(pos, radius, depth, mat, vertices=24, radius_top=None):
+def cylinder(pos, radius, depth, mat, vertices=24, radius_top=None, bevel_segments=3):
     if radius_top is None:
         bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth, location=pos)
     else:
         bpy.ops.mesh.primitive_cone_add(vertices=vertices, radius1=radius, radius2=radius_top, depth=depth, location=pos)
-    return finish(bpy.context.object, mat, .009)
+    return finish(bpy.context.object, mat, .009, bevel_segments=bevel_segments)
 
 
 def sphere(pos, scale, mat):
@@ -81,9 +81,9 @@ def sphere(pos, scale, mat):
     return finish(obj, mat, smooth=True)
 
 
-def tube_between(start, end, radius, mat):
+def tube_between(start, end, radius, mat, bevel_segments=3):
     a, b = Vector(start), Vector(end)
-    obj = cylinder((a+b)/2, radius, (b-a).length, mat, 12)
+    obj = cylinder((a+b)/2, radius, (b-a).length, mat, 12, bevel_segments=bevel_segments)
     obj.rotation_mode = 'QUATERNION'
     obj.rotation_quaternion = (b-a).to_track_quat('Z', 'Y')
     return obj

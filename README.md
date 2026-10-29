@@ -8,7 +8,7 @@ You owe the conductor £600. Explore seven art-deco carriages, decide which reli
 
 ![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
-[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png).
+[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png) · [The choir's one voice](docs/screenshots/choir.png).
 
 ## Playing
 
@@ -50,6 +50,6 @@ Pushes build downloadable native artifacts. Version tags run both Linux and nati
 
 For an optional live-conductor balance diagnostic, run `godot --headless --fixed-fps 120 --path . --script scripts/assess_live.gd -- --qa-seed=20261029`. This porter knows the freight layout and uses ordinary movement, cover, folding and timetable costs. It changes no threat or economy rules. A failed heuristic run does not establish that a ticket is unwinnable; this diagnostic is separate from the deterministic build checks.
 
-Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.
+Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, `scripts/model_organ.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.
 
 `python3 scripts/generate_audio.py` rebuilds the original score, effects and carriage ambience using the Python standard library. `scripts/generate_ambience.py` can rebuild just the room loops and morning theme.

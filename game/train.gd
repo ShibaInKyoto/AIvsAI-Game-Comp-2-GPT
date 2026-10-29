@@ -187,7 +187,6 @@ func decorate_exchange() -> void:
 
 func decorate_car(car: int, z: float) -> void:
 	var brass := mat("ba9560", 0.7)
-	var green := mat("42706a")
 	var wood := mat("30282d")
 	for side in [-1, 1]:
 		var x: float = side * 2.5
@@ -213,13 +212,8 @@ func decorate_car(car: int, z: float) -> void:
 					prop("bookcase", Vector3(x, 0, sz), -side * PI / 2)
 					collision_box(Vector3(x, 1.1, sz), Vector3(1.1, 2.2, 1.8))
 				5:
-					block(Vector3(x, 0.7, sz), Vector3(1.2, 1.4, 1.9), wood, true)
-					for pipe in range(5):
-						cylinder(Vector3(x, 1.75, sz - 0.6 + pipe * 0.3), 0.1, 1.8 + pipe * 0.2, brass)
-					for key in range(12):
-						block(Vector3(x - side * 0.64, 1.22, sz - 0.8 + key * 0.14), Vector3(0.25, 0.05, 0.12), mat("e5d7b5"))
-						if key % 7 not in [2, 6]:
-							block(Vector3(x - side * 0.60, 1.26, sz - 0.73 + key * 0.14), Vector3(0.13, 0.04, 0.06), mat("151923"))
+					prop("choir_organ", Vector3(x, 0, sz), -side * PI / 2)
+					collision_box(Vector3(x, 0.7, sz), Vector3(1.2, 1.4, 1.9))
 		# Pedestals sit inside the furniture line, leaving the aisle navigable.
 		var pedestal_z := z + rng.randf_range(-1.8, 1.8)
 		block(Vector3(side * 2.1, 0.45, pedestal_z), Vector3(0.85, 0.9, 0.85), wood, true)
