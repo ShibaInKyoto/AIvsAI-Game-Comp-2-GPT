@@ -22,7 +22,7 @@ Random and daily UTC tickets share these rules. Endless services reset the train
 
 ## Art, sound and rendering
 
-Original procedural architecture and modeled furnishings distinguish the observatory, winter garden, dining room, archive, choir and last carriage. Four modeled antiques have separate silhouettes and animated effects. The porter’s gloved hand, leather satchel and selected cargo appear in first person. An original locomotive, viaduct, mist and steam frame the title; Four individually modeled travelers face the aisle, carrying a telescope, book, music folio or travel case; helped passengers populate a real-time dawn station. Their combined geometry is 15,376 triangles, compared with 27,808 for four instances of the previous shared figure.
+Original procedural architecture and modeled furnishings distinguish the observatory, winter garden, dining room, archive, choir and last carriage. Four modeled antiques have separate silhouettes and animated effects. The porter’s gloved hand, leather satchel and selected cargo appear in first person. An original locomotive, viaduct, mist and steam frame the title; Four individually modeled travelers face the aisle, carrying a telescope, book, music folio or travel case; helped passengers populate a real-time dawn station. Their combined geometry is 15,376 triangles, compared with 27,808 for four instances of the previous shared figure. The morning platform has modeled oak-and-iron benches, open canopy spandrels and a six-o’clock clock, merged into the static material batches.
 
 Static scenery is merged by material while retaining carriage roots and collision. The forest uses four MultiMeshes with shader-based scrolling; the CPU updates four uniforms. A passing village moves as one batched group. The fern has 2,920 triangles, and the modeled pipe organ has 13,364. These are geometry/work counts, not claims about hardware frame rate; cloud rendering uses llvmpipe.
 
@@ -45,7 +45,7 @@ There are no runtime network services or package dependencies. Asset-generation 
 `scripts/validate.sh` checks process exit status and engine/script errors, then runs:
 
 - 103,035 state checks, including 25,000 randomized actions and 1,000 deterministic train orders.
-- Profile recovery/replacement, legacy-profile migration and remembered-traveler rules, mixed indexed geometry, fifty sound checks and ten conductor checks.
+- Profile recovery/replacement, legacy-profile migration and remembered-traveler rules, 192 text-layout checks across all traveler combinations and result modes, mixed indexed geometry, fifty sound checks and ten conductor checks.
 - Three scene seeds exercising actual interactions, focused Tab input, floor/window collision, quiet evasion, bell dropping, the moving organ diversion, capture and UI transitions.
 - A 228m walking/economy soak with twelve physical pickups, two rotations, £655 extraction, dawn and a harder service restart. This harness isolates the conductor; the scene encounter tests exercise live threat.
 

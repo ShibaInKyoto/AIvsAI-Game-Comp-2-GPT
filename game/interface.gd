@@ -372,16 +372,19 @@ func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage
 	guide_heading.text = "THE FIRST MORNING" if run.won else "ANOTHER NIGHT"
 	guide_body.add_theme_font_size_override("font_size", 16)
 	var epilogue := "The train stops at a platform that was not on the timetable. The air smells of rain on warm stone.\n\n" if run.won else "The conductor closes his ledger. The fare you paid was not enough to buy back your name.\n\nHe offers you another ticket. You know the carriages now. You know what the bells cost.\n\nYou know there is a way home.\n\n"
+	if not run.won and not run.commissions.is_empty():
+		epilogue = "The conductor closes his ledger. The fare you paid was not enough to buy back your name.\n\n"
 	for identity in run.commissions:
 		epilogue += "%s\n%s\n\n" % [MidnightPassenger.NAMES[identity].trim_prefix("THE "), MidnightPassenger.THANKS[identity]]
 	if run.won and run.commissions.is_empty():
 		epilogue += "You step onto the platform alone. Behind the windows, the passengers watch you go.\n\nPerhaps, on another night, there will be time for them too."
-	guide_body.text = epilogue
+	guide_body.text = epilogue.strip_edges()
 	mode = "result"
 	menu.show()
 	hud.hide()
 	clear_buttons()
 	heading.text = "A DEBT PAID.\nA DAWN EARNED." if run.won else "SOME DEBTS\nOUTLIVE THE NIGHT."
+	heading.add_theme_font_size_override("font_size", 60 if run.won else 56)
 	subtitle.text = "£%d exchanged  /  £%d required\n%d deliveries · %d folds · %d encounters · %d helped\nBest exchange: £%d\n\n%s\nTicket %d" % [run.banked, MidnightRun.TARGET, run.deliveries, run.folds, run.recovered, run.commissions.size(), record, "You step off the train with your name intact." if run.won else "Each ticket starts fresh. Try another route, or pack differently.", run.seed_value]
 	if run.won and not run.commissions.is_empty():
 		subtitle.text += "\nTheir mornings await in the porter's notebook."
@@ -518,6 +521,7 @@ func toggle_route_page() -> void:
 func reset_guide() -> void:
 	if is_instance_valid(guide_body):
 		guide_panel.show()
+		heading.add_theme_font_size_override("font_size", 60)
 		title_shade.hide()
 		menu_buttons.position.y = 465
 		menu_buttons.add_theme_constant_override("separation", 10)

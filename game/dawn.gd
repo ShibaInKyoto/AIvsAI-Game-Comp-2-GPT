@@ -20,10 +20,10 @@ func build(helped: Dictionary) -> Camera3D:
 		art.cylinder(Vector3(4.8, 2.0, z), 0.07, 4, dark)
 		art.cylinder(Vector3(4.8, 4.0, z), 0.32, 0.3, glow)
 		art.cylinder(Vector3(4.8, 4.2, z), 0.4, 0.06, brass)
-		art.block(Vector3(3.6, 0.55, z - 4), Vector3(1.5, 0.12, 3), art.mat("573f3a"))
-		art.block(Vector3(4.25, 1.0, z - 4), Vector3(0.12, 0.8, 3), art.mat("573f3a"))
-		for offset in [-1, 1]:
-			art.block(Vector3(3.6, 0.25, z - 4 + offset), Vector3(1.3, 0.5, 0.1), dark)
+	for z in [3, -9, -21, -33]:
+		art.prop("station_bench", Vector3(4.6, 0, z), -PI / 2)
+	for z in [8, -4, -16, -28]:
+		art.prop("winter_fern", Vector3(4.8, 0, z))
 	# Rails and the now ordinary-looking train.
 	for x in [-9.0, -12.0]:
 		art.block(Vector3(x, -0.65, -17), Vector3(0.16, 0.2, 100), brass)
@@ -41,10 +41,15 @@ func build(helped: Dictionary) -> Camera3D:
 			for side in [-1, 1]:
 				var wheel := art.cylinder(Vector3(-10.5 + side * 2, -0.2, z + axle), 0.65, 0.2, dark)
 				wheel.rotation.z = PI / 2
-	# Station canopy and its old-fashioned destination board.
-	for x in [-4.6, 4.6]:
-		art.cylinder(Vector3(x, 2.7, -27), 0.09, 5.4, dark)
-	art.block(Vector3(0, 5.4, -27), Vector3(11, 0.25, 9), green)
+	# Open cast-iron spandrels and a pitched roof shelter the dawn platform.
+	for z in [-3, -13, -23, -33]:
+		art.prop("station_frame", Vector3(0, 0, z))
+	for side in [-1, 1]:
+		var roof := art.block(Vector3(side * 2.825, 4.975, -18.5), Vector3(5.73, 0.12, 35), green)
+		roof.rotation.z = -side * atan(0.95 / 5.65)
+		art.block(Vector3(side * 5.63, 4.50, -18.5), Vector3(0.10, 0.16, 35.4), brass)
+	art.block(Vector3(0, 5.46, -18.5), Vector3(0.13, 0.13, 35.4), brass)
+	art.prop("station_clock", Vector3(2.8, 0, -8))
 	art.block(Vector3(0, 4.25, -23), Vector3(6.6, 1.1, 0.2), dark)
 	art.sign_text("THE FIRST MORNING", Vector3(0, 4.25, -22.87), 55)
 	art.sign_text("YOU MAY KEEP YOUR NAME", Vector3(0, 3.55, -22.85), 22)
@@ -54,6 +59,7 @@ func build(helped: Dictionary) -> Camera3D:
 		passenger.position = Vector3(-2.5 + int(identity) * 1.6, 0, -14)
 		passenger.completed = true
 		add_child(passenger)
+		passenger.caption.hide()
 	# Far hills silhouette against the peach-colored sky.
 	for index in range(20):
 		var hill := art.cylinder(Vector3(-140 + index * 16, 0, -135), 17, 18 + sin(index) * 10, art.mat("596b67"))

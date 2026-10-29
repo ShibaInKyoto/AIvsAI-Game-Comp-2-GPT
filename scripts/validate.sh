@@ -20,6 +20,7 @@ run_checked() {
 run_checked "$GODOT_BIN" --headless --path . --editor --import
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/run_state_test.gd
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/profile_test.gd
+run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/interface_test.gd
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/geometry_test.gd
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/sound_test.gd
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/conductor_test.gd
