@@ -15,7 +15,7 @@ var dawn_mix := 0.0
 var chime_timer := 0.0
 
 func _ready() -> void:
-	for name in ["take", "bank", "fold", "caught", "chime", "step", "click"]:
+	for name in ["take", "bank", "fold", "caught", "chime", "step", "click", "organ"]:
 		effects[name] = load("res://assets/audio/%s.wav" % name)
 	music = loop_player("night", -3)
 	rails = loop_player("train", -5)
@@ -80,18 +80,23 @@ func play(name: String, pitch := 1.0, volume := 0.0) -> void:
 func threat(delta: float, level: float, source: Vector3) -> void:
 	chime_timer -= delta
 	if level > 0.3 and chime_timer <= 0:
-		# A real world-space cue lets headphones reveal which way he is approaching.
-		var player := AudioStreamPlayer3D.new()
-		player.stream = effects.chime
-		player.position = source
-		player.pitch_scale = 0.85 + level * 0.15
-		player.unit_size = 7
-		player.max_distance = 35
-		player.volume_db = -2
-		add_child(player)
-		player.finished.connect(player.queue_free)
-		player.play()
+		play_at("chime", source, 0.85 + level * 0.15, -2)
 		chime_timer = lerpf(5, 1.8, level)
+
+func play_at(name: String, source: Vector3, pitch := 1.0, volume := 0.0) -> void:
+	if not effects.has(name):
+		return
+	# World-space cues let headphones reveal the source's direction.
+	var player := AudioStreamPlayer3D.new()
+	player.stream = effects[name]
+	player.position = source
+	player.pitch_scale = pitch
+	player.unit_size = 7
+	player.max_distance = 35
+	player.volume_db = volume
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
 
 func silence() -> void:
 	set_process(false)

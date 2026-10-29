@@ -26,6 +26,7 @@ Simulation/economy (`run_state.gd`) is independent of the scene tree. Main compo
 
 - State suite: 103,035 checks, including 25,000 randomized actions across 100 seeds, plus 1,000 deterministic initial train orders.
 - Sound suite: 50 checks of imported compressed-loop lengths, room crossfades, dawn/restart and stream cleanup.
+- Conductor suite: 10 checks of the single-use choir organ, moving source, noise priority, arrival, expiry and source cleanup.
 - Scene smoke: pickup/drop/recover/bank, upgrades, actual switchboard button and exact time charge, all three resonance effects, passenger trade, actual floor and window collision, folding, conductor collision/recovery, result/route/settings UI.
 - Walking route: 228m aisle round trip, twelve physical pickups, two rotations, separately timed £655 extraction, dawn scene and restart into a harder service.
 - Release exports use explicit checks, never stripped `assert()` calls.
@@ -165,3 +166,13 @@ The paused route ledger now has a passenger page showing all four requests, curr
 The page was rendered normally and with a completed-passenger/£75 presentation fixture at 960×540. That fixture used the real page button and an actual timetable rotation, verifying the astronomer's carriage changed from 01 to 02. Scene smoke passed after the new page and signal connection. The existing bell math is unchanged: bonuses apply to carried freight, while sealed fares retain their quoted value. HUD, relic prompt and guide wording now say this consistently.
 
 Native Windows CI passed the live-assessment checkpoint 5a46bf2 (40868649503) and audio checkpoint c41f87d (40870264952). This ledger revision still needs its own native check. No final release has been declared.
+
+## The choir's one voice
+
+A brass stop on the choir's existing organ can now be played with E once per run. Its original three-second chord calls the conductor toward that organ for eighteen seconds. Nearby noise takes priority, so the call does not grant immunity. When he arrives he waits until the call expires, then resumes patrol. The destination reads the organ's current transform and respects the sanctuary boundary. The organ is a child of the choir carriage and remains spent after shunting or capture; a new service restores its voice.
+
+The conductor's caption and warm lantern identify when he is following the music. The choir's arrival text and contextual prompt explain the action. The organ source and conductor chime share a positional sound helper. The new organ component has one small mesh and a caption, with no per-frame processing or collision.
+
+Ten conductor checks cover source movement/removal, noise priority, arrival, expiry, normal patrol, the sanctuary boundary and one-use activation. Scene smoke now uses the actual gaze/E path, verifies that activation grants no grace, shunts the sounding organ through the real counter, and verifies ordinary footsteps still interrupt the call. The service-restart test also checks that the new organ is unused. The full state/profile/geometry/sound/conductor suites, three scene seeds and walking route passed. Fresh Linux smoke and Windows-through-Wine smoke/rendering passed. The organ and conductor captions now use the body font with thinner outlines. Native Windows CI still needs to verify this revision.
+
+Passenger-ledger revision c282a7b passed native Windows CI (run 40871192372). No final release has been declared.

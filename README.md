@@ -36,6 +36,7 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 - `game/run_state.gd`: independent economy and run simulation.
 - `game/train.gd`: procedural carriage architecture, scenery and timetable.
 - `game/freight.gd`, `passenger.gd`, `conductor.gd`: relics, commissions and threat behavior.
+- `game/organ.gd`: the choir's single-use conductor diversion.
 - `game/satchel.gd`: the porter's camera-local bag, glove and selected relic.
 - `game/dawn.gd`: the real-time station epilogue.
 - `game/title_scene.gd`: the locomotive and viaduct title tableau.

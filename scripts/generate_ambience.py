@@ -117,6 +117,10 @@ def generate_all():
     for identity, name in enumerate(['exchange', 'observatory', 'garden', 'dining', 'archive', 'choir', 'last']):
         write('room_' + name, carriage(identity))
     write('morning', morning())
+    call = [0.0] * (RATE * 3)
+    for note, hz in enumerate([293.66, 349.23, 440, 587.33]):
+        strike(call, note * .18, 2.45, hz, .07)
+    write('organ', call)
 
 
 if __name__ == '__main__':

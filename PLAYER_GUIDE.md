@@ -43,6 +43,8 @@ The chime comes from his position in the train. Turn your head or use headphones
 
 Stay crouched as you leave cover, until the lantern is farther away. Standing up beside him can restart pursuit. If he is already walking away, quietly follow at a distance rather than waiting for him to complete another patrol.
 
+The choir carriage has a brass organ stop. Face it and press E to call the conductor toward that organ for eighteen seconds. Each night gives it one voice. Nearby footsteps and bells still draw his attention, so move quietly after playing. The organ and his destination follow the choir carriage when you shunt it; the call never brings him into the exchange sanctuary.
+
 ## Tips
 
 Bank an early delivery for a free upgrade. A bell is worth more when the rest of your satchel is valuable. Save doorways for long journeys. The timetable changes the route without creating new freight; turning it repeatedly costs precious time. Sneaking is slower but helps you pass safely. You can finish a run even after a bad encounter.

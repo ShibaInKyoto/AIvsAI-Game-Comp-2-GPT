@@ -5,6 +5,7 @@ const SAVE_PATH := "user://porter.json"
 var run: MidnightRun
 var train: MidnightTrain
 var conductor: MidnightConductor
+var organ: MidnightOrgan
 var player: CharacterBody3D
 var camera: Camera3D
 var lantern: SpotLight3D
@@ -155,6 +156,9 @@ func build_world(ticket: int) -> void:
 	conductor = MidnightConductor.new()
 	world_root.add_child(conductor)
 	move_carriage_contents(train.shuffle_initial(ticket))
+	organ = MidnightOrgan.new()
+	organ.position = Vector3(1.7, 1.26, 4.8)
+	train.cars[5].add_child(organ)
 	for cargo in freight:
 		var starting_slot := clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 1, 6)
 		cargo.value = 12 + starting_slot * 8 + rng.randi_range(0, 8)
@@ -367,6 +371,12 @@ func nearest_passenger() -> MidnightPassenger:
 			return passenger
 	return null
 
+func organ_targeted() -> bool:
+	if not is_instance_valid(organ):
+		return false
+	var offset := organ.global_position - camera.global_position
+	return offset.length() < 2.4 and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.4
+
 func interact() -> void:
 	var cargo := nearest_freight()
 	if at_counter() and (cargo == null or run.inventory.size() >= run.capacity):
@@ -392,6 +402,13 @@ func interact() -> void:
 			notify(MidnightPassenger.REQUESTS[passenger.identity], 7)
 		return
 	if cargo == null:
+		if organ_targeted():
+			if organ.activate():
+				conductor.answer_choir(organ)
+				sound.play_at("organ", organ.global_position, 0.9, -3)
+				notify("The choir calls him here for %d seconds. Move quietly; he can still hear nearby noise." % int(MidnightConductor.CALL_DURATION), 6)
+			else:
+				notify("The choir has spent its one voice for this night.")
 		return
 	if run.take(cargo.kind, cargo.value, cargo.serial):
 		cargo.taken = true
@@ -597,7 +614,7 @@ func _physics_process(delta: float) -> void:
 	if not visited.has(identity):
 		visited[identity] = true
 		if notice_time < 1:
-			notify(["", "The stars here shine inward. Someone has wound them too tightly.", "In the winter garden, everything grows toward yesterday.", "Every place is set. None of the chairs are warm.", "The ledger has your handwriting. The dates are all tomorrow.", "The bells have no clappers. They ring when you remember them.", "The last carriage smells like the home you have not found yet."][identity], 5)
+			notify(["", "The stars here shine inward. Someone has wound them too tightly.", "In the winter garden, everything grows toward yesterday.", "Every place is set. None of the chairs are warm.", "The ledger has your handwriting. The dates are all tomorrow.", "The bells have no clappers. Its organ can call the conductor here once. E at the brass stop.", "The last carriage smells like the home you have not found yet."][identity], 5)
 	var cargo := nearest_freight()
 	var passenger := nearest_passenger()
 	var at_exchange := at_counter()
@@ -628,12 +645,16 @@ func _physics_process(delta: float) -> void:
 		message = "E  %s  /  %s for a £%d sealed fare" % [MidnightPassenger.NAMES[passenger.identity], MidnightFreight.TYPES[MidnightPassenger.NEEDS[passenger.identity]], passenger_fare(passenger.identity)]
 		if passenger.completed:
 			message = "E  %s  /  A traveler you helped. Speak to them again." % MidnightPassenger.NAMES[passenger.identity]
+	elif cargo == null and organ_targeted():
+		message = "THE CHOIR IS SILENT  /  Its one call has been spent." if organ.used else "E  PLAY THE CHOIR  /  Calls the conductor here for %ds. Once per night." % int(MidnightConductor.CALL_DURATION)
 	interface.update(run, car, energy, threat, message, sneaking)
 	if threat > 0.35:
 		if grace > 0:
 			interface.threat_label.text = "HE IS DISTRACTED  /  Move while you can."
 		elif conductor.alert:
 			interface.threat_label.text = "HE HEARS YOU  /  Bells carry far. Run, fold home, or drop them and sneak aside."
+		elif conductor.following_music:
+			interface.threat_label.text = "FOLLOWING THE CHOIR  /  He still hears nearby noise. Keep quiet."
 		elif sneaking and absf(player.position.x) > noise:
 			interface.threat_label.text = "KEEP QUIET  /  Let the red lantern pass."
 	if run.pending_fares > 0:
@@ -727,6 +748,11 @@ func capture_frame() -> void:
 		conductor.speed = 0
 		player.position = conductor.position + Vector3(1.5, 0.05, 3.5)
 		player.look_at(conductor.position + Vector3(0, 0.05, 0))
+		grace = 999
+	if "--capture-organ" in OS.get_cmdline_user_args():
+		player.position = organ.global_position + Vector3(-1.8, -1.21, 0)
+		player.look_at(Vector3(organ.global_position.x, player.position.y, organ.global_position.z))
+		camera.rotation.x = -0.12
 		grace = 999
 	if "--capture-window" in OS.get_cmdline_user_args():
 		var window_z := -train.car_order.find(2) * MidnightTrain.LENGTH + 2.8
@@ -827,6 +853,7 @@ func smoke_test() -> void:
 	verify(passenger.completed and run.pending_fares == first_fare and run.inventory.is_empty(), "Passenger trade failed")
 	resume()
 	await test_quiet_encounter()
+	await test_choir_organ()
 	player.position = Vector3(0, 0.05, 2)
 	# Check actual CharacterBody collision against the floor.
 	for frame in range(60):
@@ -892,7 +919,7 @@ func smoke_test() -> void:
 	verify(interface.mode == "route" and interface.route_rows.get_child_count() == MidnightTrain.COUNT, "Route ledger failed")
 	interface.show_settings()
 	verify(interface.settings_box.visible, "Settings UI failed")
-	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, quiet evasion, fold, conductor capture, results, focused route/settings UI")
+	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, quiet evasion, choir diversion, fold, conductor capture, results, focused route/settings UI")
 	await shutdown()
 
 func test_key(key: Key, pressed: bool) -> void:
@@ -946,6 +973,49 @@ func test_quiet_encounter() -> void:
 	test_key(KEY_CTRL, false)
 	grace = 10
 	conductor.position.z = -78
+
+func test_choir_organ() -> void:
+	# Activate through the actual gaze/E path, without granting new immunity.
+	player.position = organ.global_position + Vector3(-1.8, -1.21, 0)
+	player.velocity = Vector3.ZERO
+	player.look_at(Vector3(organ.global_position.x, player.position.y, organ.global_position.z))
+	camera.rotation.x = -0.12
+	conductor.position.z = organ.global_position.z + 9
+	grace = 0
+	test_key(KEY_CTRL, true)
+	verify(organ_targeted() and nearest_freight() == null and nearest_passenger() == null, "Organ interaction fixture failed")
+	interact()
+	verify(organ.used and conductor.music_source == organ and grace == 0, "E must call the conductor without granting immunity")
+	for frame in range(60):
+		await get_tree().physics_frame
+	verify(conductor.following_music and not conductor.alert, "A quiet porter must let the conductor answer the choir")
+	var time_left := conductor.call_remaining
+	interact()
+	verify(is_equal_approx(conductor.call_remaining, time_left), "The organ's spent voice must not restart its call")
+	# Shunt the complete sounding carriage out and back through the real counter.
+	player.position = Vector3(0, 0.05, 3.7)
+	var source_z := organ.global_position.z
+	shunt_carriages(5, 6)
+	verify(is_equal_approx(organ.global_position.z, source_z + MidnightTrain.LENGTH), "The organ must travel with the choir")
+	verify(conductor.music_source == organ, "Shunting must retain the sounding source")
+	shunt_carriages(6, 5)
+	interface.enter_game()
+	player.position = conductor.position + Vector3(2, 0.05, -1)
+	grace = 0
+	test_key(KEY_CTRL, false)
+	for frame in range(2):
+		await get_tree().physics_frame
+	verify(conductor.alert and not conductor.following_music, "The choir must not prevent the conductor hearing nearby footsteps")
+	# Restore the isolated call fixture; its one use remains spent for this run.
+	conductor.call_remaining = 0
+	conductor.music_source = null
+	conductor.following_music = false
+	conductor.position.z = -78
+	player.position = Vector3(0, 0.05, 3.7)
+	player.velocity = Vector3.ZERO
+	player.rotation.y = 0
+	camera.rotation.x = 0
+	grace = 10
 
 func walk_test_to(target: Vector3) -> bool:
 	var frames := 0
@@ -1027,7 +1097,7 @@ func soak_test() -> void:
 	verify(camera.is_inside_tree() and is_instance_valid(world_root), "Dawn epilogue failed")
 	service = 2
 	start_ticket(false, 90211)
-	verify(run.banked == 0 and run.remaining == 255 and conductor.speed > 2.15, "Next service did not reset and escalate")
+	verify(run.banked == 0 and run.remaining == 255 and conductor.speed > 2.15 and not organ.used, "Next service did not reset and escalate")
 	for frame in range(30):
 		await get_tree().physics_frame
 	verify(player.is_on_floor(), "Restart after epilogue failed")
