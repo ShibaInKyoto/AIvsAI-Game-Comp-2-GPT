@@ -12,6 +12,7 @@ var serial := 0
 var visual: Node3D
 var phase := 0.0
 var taken := false
+var display_position := Vector3.ZERO
 
 func configure(type: int, price: int, identity: int) -> void:
 	kind = type

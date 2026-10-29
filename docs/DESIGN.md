@@ -66,3 +66,9 @@ Conductor chimes now use a real 3D sound source. The profile module validates ea
 Title work exposed an indexed/non-indexed mesh batching defect. The shared batcher now normalizes non-indexed custom surfaces before appending them; a regression checks that custom triangles remain referenced when merged with a cube. The state, profile, geometry, three-seed scene and walking-route suites passed. Fresh Linux standalone smoke passed, and title/results captures rendered cleanly. The preceding relic-art commit 320e02f passed native Windows CI. This checkpoint needs its own pushed CI result before it is treated as Windows-verified.
 
 Continue independent development after this checkpoint; no final release has been declared. Preserve the existing checkout and pending work across model/usage changes. User switched reasoning effort from Ultra to High to conserve budget and may switch model; this does not change the game requirements or authorize a final declaration.
+
+## Cargo recovery checkpoint
+
+Native Windows CI passed title/profile checkpoint 8873f35 (run 40840321227). The Windows export also rendered the title scene under Wine and passed exported smoke, including profile replacement.
+
+A later recovery audit found that dropped-and-recollected freight returned to the drop location on capture despite the display-return rule. Each relic now tracks its display independently of its current physical location. Both positions follow their respective carriage during shunting; capture restores the relic to the moving display. The scene regression drops/recollects a real relic at the exchange, moves its original carriage away and back, then checks actual conductor capture restores it and releases its collection identity. All three ticket seeds and the physical winning route passed. This recovery change needs its own native Windows CI result.

@@ -138,6 +138,7 @@ func build_world(ticket: int) -> void:
 		cargo.name = "Freight_%02d" % index
 		cargo.configure(kind, 12 + (index / 3 + 1) * 8 + rng.randi_range(0, 8), index)
 		cargo.position = train.spawn_points[index]
+		cargo.display_position = cargo.position
 		world_root.add_child(cargo)
 		freight.append(cargo)
 	for index in range(4):
@@ -404,6 +405,8 @@ func rotate_timetable() -> void:
 
 func move_carriage_contents(changes: Dictionary) -> void:
 	for cargo in freight:
+		var display_slot := clampi(roundi(-cargo.display_position.z / MidnightTrain.LENGTH), 1, 6)
+		cargo.display_position.z += float(changes.get(display_slot, 0))
 		var old_slot := clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 0, 6)
 		if changes.has(old_slot):
 			cargo.position.z += float(changes[old_slot])
@@ -446,6 +449,7 @@ func caught() -> void:
 		for cargo in freight:
 			if cargo.serial == item.serial:
 				cargo.taken = false
+				cargo.position = cargo.display_position
 				cargo.show()
 				break
 	run.caught()
@@ -746,8 +750,21 @@ func smoke_test() -> void:
 		await get_tree().physics_frame
 	test_direction = Vector3.ZERO
 	verify(player.position.x < 3.25 and player.position.x > 2.7, "Window collision failed")
+	# A relic dropped at home still belongs to its original moving display on capture.
+	var returned_cargo := freight[1]
+	var original_display := returned_cargo.display_position
+	player.position = Vector3(0, 0.05, 3.7)
+	run.take(returned_cargo.kind, returned_cargo.value, returned_cargo.serial)
+	returned_cargo.taken = true
+	returned_cargo.hide()
+	drop_selected()
+	interact()
+	verify(returned_cargo.taken and run.inventory.size() == 1, "Dropped cargo could not be collected at home")
+	shunt_carriages(1, 2)
+	verify(is_equal_approx(returned_cargo.display_position.z, original_display.z - MidnightTrain.LENGTH) and returned_cargo.position.z > 0, "Display and dropped cargo must travel independently")
+	shunt_carriages(1, 2)
+	interface.enter_game()
 	run.take(2, 30, 100)
-	run.take(1, 20, 101)
 	player.position.z = -70
 	fold_home()
 	verify(player.position.z > 0 and run.inventory.size() == 1, "Fold failed")
@@ -758,6 +775,7 @@ func smoke_test() -> void:
 	await get_tree().physics_frame
 	verify(player.position.z > 0 and run.inventory.is_empty() and run.banked == value and run.recovered == 1, "Catch recovery failed")
 	verify(run.pending_fares == first_fare, "Sealed fare lost during recovery")
+	verify(not returned_cargo.taken and returned_cargo.position.is_equal_approx(original_display) and not run.collected_ids.has(returned_cargo.serial), "Captured dropped cargo must return to its display")
 	player.position = Vector3(0, 0.05, 3.7)
 	run.remaining = 100
 	run.take(3, 10, 203)
