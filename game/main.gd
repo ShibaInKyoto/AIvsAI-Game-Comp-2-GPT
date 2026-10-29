@@ -547,7 +547,7 @@ func _physics_process(delta: float) -> void:
 	camera.fov = lerpf(camera.fov, (78.0 + 5.0 * motion) if sprinting else 78.0, delta * 5)
 	var noise := hearing_radius(sprinting, sneaking)
 	threat = conductor.advance(delta, player.position, noise, grace)
-	sound.threat(delta, threat, conductor.global_position + Vector3(0, 1.6, 0))
+	sound.threat(delta, threat, conductor.lantern.global_position)
 	var distance := conductor.position.distance_to(player.position)
 	if distance < 9 and player.position.z < -12 and grace <= 0:
 		run.composure -= delta * (7 if conductor.alert else 3)
@@ -678,6 +678,11 @@ func capture_frame() -> void:
 	if "--capture-portrait" in OS.get_cmdline_user_args():
 		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
+	if "--capture-conductor" in OS.get_cmdline_user_args():
+		conductor.speed = 0
+		player.position = conductor.position + Vector3(1.5, 0.05, 3.5)
+		player.look_at(conductor.position + Vector3(0, 0.05, 0))
+		grace = 999
 	if "--capture-window" in OS.get_cmdline_user_args():
 		var window_z := -train.car_order.find(2) * MidnightTrain.LENGTH + 2.8
 		train.village.position.z = window_z + 42

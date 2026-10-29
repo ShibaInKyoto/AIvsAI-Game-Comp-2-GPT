@@ -7,7 +7,6 @@ var lantern: OmniLight3D
 var phase := 0.0
 var patrol_direction := 1.0
 var alert := false
-var active := true
 var speed := 2.15
 
 func _ready() -> void:
@@ -15,11 +14,11 @@ func _ready() -> void:
 	body = preload("res://assets/models/conductor.glb").instantiate()
 	add_child(body)
 	lantern = OmniLight3D.new()
-	lantern.position = Vector3(0.47, 1.05, 0.2)
+	lantern.position = Vector3(0.48, 0.78, 0.24)
 	lantern.light_color = Color("e48667")
 	lantern.light_energy = 3
 	lantern.omni_range = 7
-	add_child(lantern)
+	body.add_child(lantern)
 	var warning := Label3D.new()
 	warning.text = "THE CONDUCTOR"
 	warning.font_size = 24
