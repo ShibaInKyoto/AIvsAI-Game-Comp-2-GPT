@@ -44,6 +44,7 @@ var test_direction := Vector3.ZERO
 var service := 0
 var voyage_total := 0
 var visited: Dictionary = {}
+var dawn_warning := false
 
 func _ready() -> void:
 	get_tree().auto_accept_quit = false
@@ -213,6 +214,7 @@ func start_ticket(daily: bool, forced_seed := 0) -> void:
 	grace = 10
 	threat = 0
 	elapsed = 0
+	dawn_warning = false
 	interface.enter_game()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if not smoke and not capture else Input.MOUSE_MODE_VISIBLE
 	notify("Bank £600 before dawn. The brass counter behind you is your sanctuary.", 7)
@@ -556,6 +558,12 @@ func _physics_process(delta: float) -> void:
 		player.position = Vector3(0, 0.1, 2.5)
 		player.velocity = Vector3.ZERO
 	run.tick(delta)
+	var dawn_level := clampf(1.0 - run.remaining / 90.0, 0, 1) * 0.55
+	sky_material.set_shader_parameter("dawn", dawn_level)
+	atmosphere.ambient_light_color = Color("9bb3c4").lerp(Color("f4d6ad"), dawn_level)
+	if run.remaining <= 60 and not dawn_warning and notice_time < 1:
+		dawn_warning = true
+		notify("The horizon is paling. Bank your freight before dawn; F folds home with a doorway.", 6)
 	var car := clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, MidnightTrain.COUNT - 1)
 	var identity: int = train.car_order[car]
 	if not visited.has(identity):
@@ -642,6 +650,8 @@ func save_settings() -> void:
 func capture_frame() -> void:
 	notice_time = 0
 	interface.notice_label.text = ""
+	if "--capture-dawn" in OS.get_cmdline_user_args():
+		run.remaining = 25
 	if "--capture-result" in OS.get_cmdline_user_args():
 		run.banked = 740
 		run.commissions = {0: true, 1: true, 2: true, 3: true}

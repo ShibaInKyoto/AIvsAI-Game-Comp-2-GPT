@@ -40,14 +40,14 @@ Push verified milestones to main. Pushes create ZIP artifacts and run actual Win
 
 ## Remaining release work
 
-Inspect latest route/title/results layouts, run the full validator and current native exports, push the completed revision, and verify that revision's Windows CI. Confirm release documentation and ZIP contents. Do not substitute a prior successful CI run for the current revision.
+Before a final declaration, verify current native exports, ZIP contents, release documentation and that revision's Windows CI. Continue balance assessment with genuine threat-aware play; the navigation/economy harness intentionally isolates the conductor. No human playtest has been claimed. Do not substitute a prior successful CI run for the current revision.
 
 
-## Latest checkpoint after environment restart
+## Earlier route and pressure checkpoint
 
 Initial carriage order is now deterministically shuffled per ticket. Freight prices are assigned by starting depth and remain fixed after moves. Boiler pressure starts at 3, caps at 6, and earns one per cumulative £150 banked. Rotation costs 2 pressure/10s; adjacent swaps cost 1/6s. This prevents repeated cheap rotations from replacing exploration. The smoke test uses extra pressure only for isolated geometry/resonance stress; the winning route uses normal pressure and a fresh 270-second budget after the independent navigation stress phase.
 
-The moving forest now uses four MultiMesh layers instead of individual tree nodes. Full validation passed after that change: 103,035 state checks, three smoke seeds (90210, 37, 20261028), and the physical winning-route test. A graphical capture of the new forest and updated switchboard, current Windows exports/CI, and release packaging remain outstanding. Do not declare development finished or tag a final release yet. Continue independently; the user has not stopped the competition.
+The moving forest now uses four MultiMesh layers instead of individual tree nodes. Full validation passed after that change: 103,035 state checks, three smoke seeds (90210, 37, 20261028), and the physical winning-route test. Subsequent checkpoints below cover the forest/switchboard captures, native exports and Windows CI. No final release has been declared. Continue independently; the user has not stopped the competition.
 
 ## Stealth and input review
 
@@ -82,3 +82,8 @@ The quiet encounter regression now uses a real bell: it attracts pursuit, is dro
 A diagnostic attempt to run the center-aisle collection bot with the conductor enabled failed (£356), because that bot walks straight through him and repeatedly gets caught. The experimental flag was removed. This does not establish human balance; no live-threat winning route or human playtest has been claimed. Future balance work should use a threat-aware route policy, retaining the separate deterministic navigation/economy checks and genuine encounter tests. No final release declaration has been made.
 
 The route ledger now marks the player's current carriage with [YOU], using the same slot calculation as the live room HUD. The switchboard capture confirms the marker fits before the arrow controls, and scene smoke passed after the navigation change. Targeting/stealth checkpoint 7b642ee passed native Windows CI (run 40841908954).
+
+
+## Approaching dawn
+
+The sky and ambient light gradually warm during the final ninety seconds. A single final-minute reminder waits for the current notification to finish, then tells the porter to bank freight or use a doorway. The normal timer remains authoritative; hours can delay the visual dawn again. The late-run garden capture rendered correctly, and scene smoke passed after the change. Route-marker revision 0b7441c is awaiting native Windows CI (run 40842493053).

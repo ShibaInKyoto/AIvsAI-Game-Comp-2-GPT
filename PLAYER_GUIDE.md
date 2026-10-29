@@ -4,7 +4,7 @@
 
 Windows 10/11, 64-bit. Extract the ZIP before opening TheMidnightExchange.exe. An OpenGL 3.3-capable graphics driver is required. The executable includes the game data. No installation, network connection or account is required.
 
-Choose **Board a new night** for a random ticket, or **Daily ticket** for the day's shared layout (UTC). A run lasts four and a half minutes, plus any time earned by banking stolen hours. Bank at least £600 to buy your freedom. Continue for a higher score or leave with Q at the exchange. At dawn, banked freight counts and anything still carried is lost.
+Choose **Board a new night** for a random ticket, or **Daily ticket** for the day's shared layout (UTC). A run lasts four and a half minutes, plus any time earned by banking stolen hours. Bank at least £600 to buy your freedom. Continue for a higher score or leave with Q at the exchange. The horizon begins to pale during the final ninety seconds. At dawn, banked freight counts and anything still carried is lost. Each new ticket starts a fresh run.
 
 ## Controls
 
