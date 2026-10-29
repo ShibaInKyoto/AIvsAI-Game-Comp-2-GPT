@@ -216,3 +216,11 @@ The shared passenger model has been replaced by four original figures: the astro
 Single-step bevels keep the four figures to 15,376 triangles combined, versus 27,808 for four instances of the earlier shared figure (44.7% fewer). Unique asset files total 657,728 bytes versus the old shared asset's 319,608 bytes. This trades a small download increase for individual identities while reducing instance geometry; no hardware FPS claim is implied. model_passengers.py reproduces them, and the complete props generator calls it too. The unused shared asset and tint-duplication code were removed.
 
 All four carriage views and the four-traveler dawn fixture were rendered and inspected. The full validator, fresh Linux standalone smoke and Windows-through-Wine smoke passed. The Windows executable also rendered the soloist and choir. Native Windows CI passed input-observer revision d709dec (run 40943261211); this art revision still needs its own CI result. No final release has been declared.
+
+## Interact with what you can see
+
+A focused review reproduced a real targeting defect: a passenger within 2.4m could be selected through a solid carriage partition. The physics ray hit the wall while the old gaze/distance check still selected the traveler. Freight, passengers and the organ now require an unobstructed world-space view. The ray excludes the porter's own capsule. Distant or out-of-cone objects do not issue ray queries, and the existing generous gaze cones remain.
+
+With walls now respected, dropping against furniture also needed a safe destination. If the intended drop spot is blocked, the relic falls at the porter's feet. Scene smoke verifies that a partition blocks a traveler and nearby freight, a clear aisle view permits interaction, and a relic dropped toward its pedestal can be recovered. Existing quiet bell-drop/recovery and organ gaze checks remain in the suite.
+
+The full validator, all three scene seeds and walking soak passed. Fresh Linux and Windows-through-Wine standalone smoke passed. The continuous-rendering OS-input driver banked £21 on ticket 574523 with no captures, then completed upgrades, switchboard clicks, ledger and menu transitions. Native Windows CI passed traveler-art revision 9372554 (run 40944559130); this targeting revision still needs its own CI result. No final release has been declared.

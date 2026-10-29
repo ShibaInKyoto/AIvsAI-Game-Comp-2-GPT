@@ -10,6 +10,8 @@ Four passenger commissions consume particular relics for sealed fares. These occ
 
 The conductor patrols the central aisle and responds to noise. Quiet side refuges let him pass. Capture restores carried freight to its moving displays and costs fifteen seconds, preserving savings, upgrades and sealed fares. The choir’s brass organ stop can call him toward its carriage for eighteen seconds, once per service. Nearby noise overrides that diversion; its destination follows the moving organ and respects the sanctuary boundary.
 
+Nearby freight, travelers and the organ require a clear view through the world as well as a generous gaze cone. Solid partitions and furniture block interaction prompts and actions. A dropped relic falls at the porter's feet if the intended spot is blocked, keeping it recoverable.
+
 ## The moving timetable
 
 The exchange stays fixed while the other six carriages begin in a ticket-dependent order. Freight prices depend on starting depth and remain fixed after moves. T moves the last carriage to the front for two pressure and ten seconds. The counter’s switchboard swaps neighbors for one pressure and six seconds. Carriage geometry, collision, freight, passengers, organ and conductor move consistently.

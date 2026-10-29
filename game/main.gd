@@ -362,6 +362,12 @@ func _notification(what: int) -> void:
 func at_counter() -> bool:
 	return player.position.distance_to(Vector3(0, 0, 4.3)) < 3.2
 
+func clear_view_to(point: Vector3) -> bool:
+	# Gaze and distance alone allow interactions through a nearby partition.
+	# Ignore the porter's capsule, but respect walls and solid furnishings.
+	var query := PhysicsRayQueryParameters3D.create(camera.global_position, point, 1, [player.get_rid()])
+	return player.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
 func nearest_freight() -> MidnightFreight:
 	var nearest: MidnightFreight = null
 	var distance := 2.15
@@ -371,7 +377,7 @@ func nearest_freight() -> MidnightFreight:
 		var offset := cargo.position - camera.global_position
 		var candidate := offset.length()
 		# A generous gaze cone avoids pixel hunting while respecting facing direction.
-		if candidate < distance and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.35:
+		if candidate < distance and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.35 and clear_view_to(cargo.position):
 			distance = candidate
 			nearest = cargo
 	return nearest
@@ -382,7 +388,7 @@ func passenger_fare(identity: int) -> int:
 func nearest_passenger() -> MidnightPassenger:
 	for passenger in passengers:
 		var offset := passenger.position + Vector3(0, 1.4, 0) - camera.global_position
-		if offset.length() < 2.4 and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.4:
+		if offset.length() < 2.4 and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.4 and clear_view_to(passenger.position + Vector3(0, 1.4, 0)):
 			return passenger
 	return null
 
@@ -390,7 +396,7 @@ func organ_targeted() -> bool:
 	if not is_instance_valid(organ):
 		return false
 	var offset := organ.global_position - camera.global_position
-	return offset.length() < 2.4 and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.4
+	return offset.length() < 2.4 and -camera.global_transform.basis.z.dot(offset.normalized()) > 0.4 and clear_view_to(organ.global_position)
 
 func interact() -> void:
 	var cargo := nearest_freight()
@@ -440,9 +446,11 @@ func drop_selected() -> void:
 	for cargo in freight:
 		if cargo.serial == item.serial:
 			cargo.taken = false
-			cargo.position = player.position - player.transform.basis.z * 0.8 + Vector3(0, 0.6, 0)
-			cargo.position.x = clampf(cargo.position.x, -3.0, 3.0)
-			cargo.position.z = clampf(cargo.position.z, -115.5, 7.5)
+			var drop_position := player.position - player.transform.basis.z * 0.8 + Vector3(0, 0.6, 0)
+			drop_position.x = clampf(drop_position.x, -3.0, 3.0)
+			drop_position.z = clampf(drop_position.z, -115.5, 7.5)
+			# Dropping against furniture must not strand a relic inside its collider.
+			cargo.position = drop_position if clear_view_to(drop_position) else player.position + Vector3(0, 0.6, 0)
 			cargo.show()
 			break
 	run.collected_ids.erase(item.serial)
@@ -821,16 +829,37 @@ func smoke_test() -> void:
 	start_ticket(false, qa_seed)
 	verify(freight.size() == 18, "Freight generation failed")
 	var cargo := freight[0]
+	# The carriage partition blocks a nearby passenger and dropped freight.
+	# Let new static bodies enter the physics space before querying them.
+	paused = true
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var view_passenger := passengers[0]
+	player.position = view_passenger.position + Vector3(0, 0.05, 2.35)
+	player.rotation.y = 0
+	camera.rotation = Vector3.ZERO
+	var cargo_position := cargo.position
+	cargo.position = view_passenger.position + Vector3(0, 1.4, 0.45)
+	verify(nearest_passenger() == null and nearest_freight() == null, "Solid partitions must block interaction targets")
+	cargo.position = cargo_position
+	player.position = view_passenger.position + Vector3(1.5, 0.05, 0)
+	player.look_at(view_passenger.position + Vector3(0, 0.05, 0))
+	verify(nearest_passenger() == view_passenger, "A clear view from the aisle must permit passenger interaction")
+	paused = false
 	player.position = cargo.position + Vector3(0, -1.3, 1.3)
 	player.rotation.y = 0
 	camera.rotation = Vector3.ZERO
 	var value := cargo.value
 	interact()
 	verify(run.inventory.size() == 1 and run.held_value() == value, "Collection failed")
+	player.position = cargo.position + Vector3(0, -1.3, 0.9)
 	drop_selected()
 	verify(run.inventory.is_empty() and not cargo.taken, "Dropping freight failed")
+	verify(clear_view_to(cargo.position), "A relic dropped against its pedestal must remain reachable")
+	camera.rotation.x = -1.0
 	interact()
 	verify(run.inventory.size() == 1 and cargo.taken, "Dropped freight cannot be recovered")
+	camera.rotation = Vector3.ZERO
 	player.position = Vector3(0, 0.1, 3.7)
 	interact()
 	verify(run.banked == value and run.inventory.is_empty(), "Banking failed")
@@ -955,7 +984,7 @@ func smoke_test() -> void:
 	test_key(KEY_ESCAPE, true)
 	test_key(KEY_ESCAPE, false)
 	verify(not interface.guide_panel.visible and interface.mode == "title", "Escape must close the notebook with a focused button")
-	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, quiet evasion, choir diversion, fold, conductor capture, results, focused route/settings UI")
+	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, visible-target collection/trade, banking, upgrades, shunting/resonances, floor/window physics, quiet evasion, choir diversion, fold, conductor capture, results, focused route/settings UI")
 	await shutdown()
 
 func test_key(key: Key, pressed: bool) -> void:
