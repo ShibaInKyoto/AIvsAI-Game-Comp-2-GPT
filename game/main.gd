@@ -70,6 +70,10 @@ func _ready() -> void:
 		elif service > 0:
 			voyage_total = maxi(0, voyage_total - run.banked)
 		start_ticket(daily))
+	interface.ticket_requested.connect(func(number: int):
+		service = 0
+		voyage_total = 0
+		start_ticket(false, number))
 	interface.endless_requested.connect(func():
 		service = 1
 		voyage_total = 0
@@ -209,12 +213,13 @@ func start_ticket(daily: bool, forced_seed := 0) -> void:
 		if daily:
 			ticket = last_ticket if interface.mode == "result" else int(Time.get_date_string_from_system(true).replace("-", ""))
 		else:
-			ticket = int(Time.get_ticks_usec() % 999999)
+			ticket = 1 + int(Time.get_ticks_usec() % 999999)
 	sky_material.set_shader_parameter("dawn", 0.0)
 	atmosphere.ambient_light_color = Color("9bb3c4")
 	atmosphere.ambient_light_energy = 0.48
 	moon.light_color = Color("90b8dc")
 	last_ticket = ticket
+	interface.set_meta("last_ticket", ticket)
 	run = MidnightRun.new()
 	run.begin(ticket)
 	build_world(ticket)
@@ -261,7 +266,7 @@ func _input(event: InputEvent) -> void:
 	elif event.keycode == KEY_ESCAPE and not playing:
 		if interface.mode == "result":
 			to_title()
-		elif interface.mode == "title":
+		elif interface.mode in ["title", "ticket"]:
 			interface.show_title(best, best_voyage)
 		else:
 			return
@@ -744,6 +749,9 @@ func capture_frame() -> void:
 		interface.route_commissions = "--capture-commissions" in OS.get_cmdline_user_args()
 	if "--capture-title" in OS.get_cmdline_user_args():
 		to_title()
+	if "--capture-ticket" in OS.get_cmdline_user_args():
+		to_title()
+		interface.show_ticket()
 	if "--capture-settings" in OS.get_cmdline_user_args() or "--capture-credits" in OS.get_cmdline_user_args():
 		to_title()
 		if "--capture-credits" in OS.get_cmdline_user_args():
@@ -826,7 +834,18 @@ func smoke_test() -> void:
 	verify(MidnightProfile.write_file(qa_profile, {"best": 600, "rescued_mask": 1}), "Initial profile write failed")
 	verify(MidnightProfile.write_file(qa_profile, {"best": 800, "rescued_mask": 5}) and MidnightProfile.read_file(qa_profile).best == 800 and MidnightProfile.read_file(qa_profile).rescued_mask == 5, "Profile replacement failed")
 	DirAccess.remove_absolute(qa_profile)
-	start_ticket(false, qa_seed)
+	interface.show_ticket()
+	interface.ticket_entry.text = "0"
+	interface.ticket_entry.text_submitted.emit("0")
+	verify(not playing, "Invalid ticket must not start a run")
+	interface.ticket_entry.grab_focus()
+	test_key(KEY_ESCAPE, true)
+	test_key(KEY_ESCAPE, false)
+	verify(interface.mode == "title" and not interface.guide_panel.visible, "Escape must close the ticket counter")
+	interface.show_ticket()
+	interface.ticket_entry.text = str(qa_seed)
+	interface.ticket_entry.text_submitted.emit(str(qa_seed))
+	verify(playing and run.seed_value == qa_seed, "A stamped ticket must start its requested train")
 	verify(freight.size() == 18, "Freight generation failed")
 	var cargo := freight[0]
 	# The carriage partition blocks a nearby passenger and dropped freight.
@@ -984,7 +1003,7 @@ func smoke_test() -> void:
 	test_key(KEY_ESCAPE, true)
 	test_key(KEY_ESCAPE, false)
 	verify(not interface.guide_panel.visible and interface.mode == "title", "Escape must close the notebook with a focused button")
-	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, visible-target collection/trade, banking, upgrades, shunting/resonances, floor/window physics, quiet evasion, choir diversion, fold, conductor capture, results, focused route/settings UI")
+	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " stamped tickets, generation, visible-target collection/trade, banking, upgrades, shunting/resonances, floor/window physics, quiet evasion, choir diversion, fold, conductor capture, results, focused route/settings UI")
 	await shutdown()
 
 func test_key(key: Key, pressed: bool) -> void:

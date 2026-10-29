@@ -18,7 +18,7 @@ The exchange stays fixed while the other six carriages begin in a ticket-depende
 
 Pressure starts at three, caps at six, and earns one per cumulative £150 banked. Three adjacencies awaken bonuses: observatory/garden adds time for banked aurora; archive/choir muffles bells inside those rooms; dining/last carriage increases unaccepted passenger offers by 25%. Planning pauses the clock, while the explicit switching costs still apply.
 
-Random and daily UTC tickets share these rules. Endless services reset the train, freight and upgrades while reducing starting time to a minimum of 150 seconds and increasing conductor speed. Voyage score accumulates across services and has its own saved best.
+Random, daily UTC and stamped number tickets share these rules. The title’s ticket counter accepts 1–999999999, starts a fresh standard service, and recalls the last ticket while the application remains open. Every ordinary random ticket is positive and can be stamped again. Endless services reset the train, freight and upgrades while reducing starting time to a minimum of 150 seconds and increasing conductor speed. Voyage score accumulates across services and has its own saved best.
 
 ## Art, sound and rendering
 
@@ -45,7 +45,7 @@ There are no runtime network services or package dependencies. Asset-generation 
 `scripts/validate.sh` checks process exit status and engine/script errors, then runs:
 
 - 103,035 state checks, including 25,000 randomized actions and 1,000 deterministic train orders.
-- Profile recovery/replacement, legacy-profile migration and remembered-traveler rules, 192 text-layout checks across all traveler combinations and result modes, mixed indexed geometry, fifty sound checks and ten conductor checks.
+- Profile recovery/replacement, legacy-profile migration and remembered-traveler rules, 204 interface checks covering ticket entry and text layout across all traveler combinations and result modes, mixed indexed geometry, fifty sound checks and ten conductor checks.
 - Three scene seeds exercising actual interactions, focused Tab input, floor/window collision, quiet evasion, bell dropping, the moving organ diversion, capture and UI transitions.
 - A 228m walking/economy soak with twelve physical pickups, two rotations, £655 extraction, dawn and a harder service restart. This harness isolates the conductor; the scene encounter tests exercise live threat.
 
@@ -53,7 +53,7 @@ There are no runtime network services or package dependencies. Asset-generation 
 
 `scripts/assess_commissions.gd` reuses that porter's movement, pickup and profit helpers to exercise all four requests and recovery after a capture. Both diagnostics leave through the actual Q input and check the winning result. The commission route also verifies all four notebook records, while suppressing profile writes.
 
-`scripts/assess_native_input.py` runs an exported Linux executable on a dedicated X11 display through OS mouse/keyboard events. An opt-in observer in `game/debug/` reports state and captures screenshots; it supplies no input or rule changes. The driver uses isolated local data and selects the launched process's window. It checks boarding, OS focus-loss pause, an F11 fullscreen round trip, a physical pickup and deposit, an upgrade, a paid switchboard click, the passenger page, focused Tab, pause, title and quit. Continuous rendering is the default; checkpoint rendering is an explicit software-display option. This short loop is separate from full-run balance and Windows CI.
+`scripts/assess_native_input.py` runs an exported Linux executable on a dedicated X11 display through OS mouse/keyboard events. An opt-in observer in `game/debug/` reports state and captures screenshots; it supplies no input or rule changes. The driver uses isolated local data and selects the launched process's window. It types ticket 90210 and checks boarding, OS focus-loss pause, an F11 fullscreen round trip, a physical pickup and deposit, an upgrade, a paid switchboard click, the passenger page, focused Tab, pause, title and quit. Continuous rendering is the default; checkpoint rendering is an explicit software-display option. This short loop is separate from full-run balance and Windows CI.
 
 GitHub Actions exports Linux and Windows ZIPs and runs the packaged game on native Windows before allowing a tagged release. The Windows executable embeds the game's icon and product details through Godot's built-in resource modifier; CI verifies its metadata before running gameplay checks. Local standalone tests and Windows-through-Wine tests supplement CI. Each revision needs its own successful run; earlier results do not certify a later build. See [the development log](DEVELOPMENT_LOG.md) for implementation checkpoints and measurements.
 

@@ -6,6 +6,8 @@ Windows 10/11, 64-bit. Extract the ZIP before opening TheMidnightExchange.exe. A
 
 Choose **Board a new night** for a random ticket, or **Daily ticket** for the day's shared layout (UTC). A run lasts four and a half minutes, plus any time earned by banking stolen hours. Bank at least £600 to buy your freedom. Continue for a higher score or leave with Q at the exchange. The horizon begins to pale during the final ninety seconds. At dawn, banked freight counts and anything still carried is lost. Each new ticket starts a fresh run.
 
+To return to a particular layout, choose **Stamp a ticket number** on the title screen and enter a whole number from 1 to 999999999. The ticket appears on the HUD and result screen, so you can write it down or share the challenge. Stamping starts a fresh standard night on the same starting train. The counter also remembers your last ticket while the game is open.
+
 ## Controls
 
 | Action | Control |

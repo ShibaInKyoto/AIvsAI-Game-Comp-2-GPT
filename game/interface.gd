@@ -3,6 +3,7 @@ extends CanvasLayer
 ## One scalable 1280x720 canvas. Menus pause the simulation without blocking UI input.
 
 signal play_requested(daily: bool)
+signal ticket_requested(number: int)
 signal resume_requested
 signal quit_requested
 signal exit_requested
@@ -52,6 +53,9 @@ var route_commissions := false
 var best := 0
 var best_long := 0
 var remembered := 0
+var ticket_entry: LineEdit
+var ticket_confirm: Button
+var ticket_hint: Label
 
 func _ready() -> void:
 	root = Control.new()
@@ -253,6 +257,67 @@ func show_title(record: int, voyage_record := 0) -> void:
 	for item in menu_buttons.get_children():
 		item.custom_minimum_size.y = 38
 		item.add_theme_font_size_override("font_size", 15)
+	var ticket := button("STAMP A TICKET NUMBER   →", show_ticket, route_buttons)
+	ticket.position = Vector2(780, 626)
+	ticket.custom_minimum_size = Vector2(410, 44)
+	ticket.size = Vector2(410, 44)
+
+func show_ticket() -> void:
+	reset_guide()
+	clear_buttons()
+	mode = "ticket"
+	heading.text = "ONE NUMBER.\nANOTHER NIGHT."
+	subtitle.add_theme_font_size_override("font_size", 17)
+	subtitle.text = "Keep a favorite timetable, or pass its number to another porter. A stamped ticket starts a fresh run on the same train.\n\nThe clock starts when you board."
+	guide_heading.text = "THE TICKET COUNTER"
+	guide_body.text = "THE SAME NIGHT, ON PAPER\nA ticket fixes the starting carriage order and freight. Its number appears on the HUD and result screen.\n\nRETURN TO A FAVORITE NIGHT\nWrite the number down, then stamp it here to return to that starting train.\n\nPASS THE CHALLENGE ON\nTwo porters with the same ticket begin with the same opportunities. Your choices still change the journey.\n\nThe daily ticket uses today's UTC date. Stamped tickets use the ordinary £600 goal and clock."
+	label(route_buttons, Vector2(94, 405), "TICKET NUMBER  /  1–999999999", 14).modulate = gold
+	ticket_entry = LineEdit.new()
+	ticket_entry.position = Vector2(94, 440)
+	ticket_entry.size = Vector2(440, 54)
+	ticket_entry.max_length = 12
+	ticket_entry.placeholder_text = "Enter a ticket number"
+	ticket_entry.add_theme_font_override("font", preload("res://assets/fonts/mono.ttf"))
+	ticket_entry.add_theme_font_size_override("font_size", 26)
+	ticket_entry.add_theme_color_override("font_color", pale)
+	ticket_entry.add_theme_color_override("caret_color", gold)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("15333d")
+	style.border_color = gold
+	style.set_border_width_all(1)
+	style.content_margin_left = 16
+	style.content_margin_right = 16
+	ticket_entry.add_theme_stylebox_override("normal", style)
+	var focus := style.duplicate() as StyleBoxFlat
+	focus.set_border_width_all(2)
+	ticket_entry.add_theme_stylebox_override("focus", focus)
+	route_buttons.add_child(ticket_entry)
+	ticket_hint = label(route_buttons, Vector2(94, 502), "", 13)
+	ticket_confirm = button("STAMP AND BOARD   →", stamp_ticket)
+	button("BACK TO THE PLATFORM", func(): show_title(best, best_long))
+	menu_buttons.position.y = 548
+	var previous_ticket := int(get_meta("last_ticket", 0))
+	ticket_entry.text = str(previous_ticket) if previous_ticket > 0 else ""
+	ticket_entry.text_changed.connect(update_ticket_form)
+	ticket_entry.text_submitted.connect(func(_text: String): stamp_ticket())
+	update_ticket_form(ticket_entry.text)
+	call_deferred("focus_ticket_entry")
+
+func focus_ticket_entry() -> void:
+	if is_instance_valid(ticket_entry) and ticket_entry.is_visible_in_tree():
+		ticket_entry.grab_focus()
+
+func valid_ticket(text: String) -> bool:
+	var value := text.strip_edges()
+	return value.is_valid_int() and value.to_int() >= 1 and value.to_int() <= 999999999
+
+func update_ticket_form(text: String) -> void:
+	ticket_confirm.disabled = not valid_ticket(text)
+	ticket_hint.text = "Ticket %d / ready to stamp." % text.to_int() if not ticket_confirm.disabled else "Use a whole number from 1 to 999999999."
+
+func stamp_ticket() -> void:
+	if is_instance_valid(ticket_entry) and valid_ticket(ticket_entry.text):
+		ticket_requested.emit(ticket_entry.text.strip_edges().to_int())
 
 func show_guide() -> void:
 	reset_guide()

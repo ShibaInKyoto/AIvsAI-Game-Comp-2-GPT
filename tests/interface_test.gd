@@ -16,6 +16,19 @@ func expect(condition: bool, message: String) -> void:
 func check_results() -> void:
 	var interface := MidnightInterface.new()
 	root.add_child(interface)
+	var tickets: Array[int] = []
+	interface.ticket_requested.connect(func(number: int): tickets.append(number))
+	interface.show_ticket()
+	for invalid in ["", "0", "-1", "12.5", "1e3", "hello", "1000000000", "999999999999"]:
+		interface.ticket_entry.text = invalid
+		interface.ticket_entry.text_changed.emit(invalid)
+		interface.ticket_entry.text_submitted.emit(invalid)
+		expect(tickets.is_empty() and interface.ticket_confirm.disabled, "Invalid ticket accepted: " + invalid)
+	for valid in ["1", "90210", "20261029", "999999999"]:
+		interface.ticket_entry.text = valid
+		interface.ticket_entry.text_changed.emit(valid)
+		interface.ticket_entry.text_submitted.emit(valid)
+		expect(not interface.ticket_confirm.disabled and tickets.back() == valid.to_int(), "Valid ticket rejected: " + valid)
 	for won in [false, true]:
 		for service in [0, 2]:
 			for helped_mask in range(16):
@@ -39,5 +52,5 @@ func check_results() -> void:
 					"Result heading crowds the epilogue panel: " + context)
 	interface.queue_free()
 	await process_frame
-	print("INTERFACE %s: %d checks across all traveler combinations, win/loss and endless results" % ["PASS" if failures == 0 else "FAIL", checks])
+	print("INTERFACE %s: %d checks, ticket entry, all traveler combinations, win/loss and endless results" % ["PASS" if failures == 0 else "FAIL", checks])
 	quit(0 if failures == 0 else 1)

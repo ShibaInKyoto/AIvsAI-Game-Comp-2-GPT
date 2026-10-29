@@ -148,8 +148,13 @@ class NativeInputCheck:
     def exercise(self):
         self.wait(lambda s: s.get("mode") == "title", "title")
         self.focus_window()
-        self.click(314, 442)
-        self.wait(lambda s: s.get("playing") and s.get("mouse") == 2, "boarding")
+        self.click(985, 648)
+        self.wait(lambda s: s.get("mode") == "ticket", "open ticket counter")
+        for digit in "90210":
+            self.tap(digit)
+        self.tap("Return")
+        self.wait(lambda s: s.get("playing") and s.get("mouse") == 2 and s.get("seed") == 90210,
+                  "board a typed ticket number")
         # Losing OS focus must protect the clock; fullscreen shortcuts must
         # still work on a pause page with ordinary keyboard/mouse focus.
         root = self.x.XDefaultRootWindow(self.display)
@@ -209,7 +214,7 @@ class NativeInputCheck:
                   "focus_pause": True, "fullscreen_round_trip": True,
                   "continuous_rendering": not self.checkpoint_rendering}
         (self.base / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
-        print("NATIVE INPUT PASS: OS boarding, focus pause, F11, pickup, bank, upgrade, paid shunt, ledger, "
+        print("NATIVE INPUT PASS: OS typed ticket, boarding, focus pause, F11, pickup, bank, upgrade, paid shunt, ledger, "
               "Tab, pause/title and quit", flush=True)
 
     def run(self):
