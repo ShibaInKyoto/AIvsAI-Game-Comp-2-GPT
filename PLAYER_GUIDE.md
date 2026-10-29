@@ -29,7 +29,7 @@ Pause automatically stops the clock when the window loses focus. Sensitivity, so
 ## Freight
 
 - **Stolen hour:** banking it adds 18 seconds. Deep-carriage hours can be valuable lifelines.
-- **Choir bell:** each adds 25% to the entire delivery. Bells also make you easier to hear.
+- **Choir bell:** each adds 25% to all carried freight. Sealed passenger fares keep their quoted value. Bells also make you easier to hear.
 - **Folded doorway:** press F to consume one and return to the exchange with the rest of your freight. Its own cash value is sacrificed.
 - **Bottled aurora:** muffles your presence while carried; banking one restores your composure.
 
@@ -63,6 +63,8 @@ Press Tab to open the route ledger. It shows the current order of the carriages 
 ## The passengers
 
 Four travelers have unfinished business. Speak with E when facing one nearby. Each needs a particular kind of relic and offers a sealed fare in exchange. Accepting a commission consumes that relic; the fare does not occupy a satchel slot and survives a conductor encounter. Return to the exchange to bank it. Each passenger can be helped once per run. They travel with their carriage when you turn the timetable.
+
+Press Tab and choose **Passenger commissions** to review requests, current carriage numbers, offers and the travelers you have helped. The ledger also shows the sealed fares still waiting to be banked. Its **Resonance couplings** button returns to the pairing bonuses.
 
 ## The switchboard and resonances
 

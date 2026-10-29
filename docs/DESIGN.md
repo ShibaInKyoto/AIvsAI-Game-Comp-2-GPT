@@ -157,3 +157,11 @@ Seven original, quiet twelve-second carriage textures add clock ticks, glass har
 Audio integration exposed an existing loop-length defect: imported WAVs use QOA compression, so raw byte count was truncating the music and rail loops. Loop boundaries now use decoded duration × sample rate. The fifty-check sound suite loads the actual imported resources and exercises the complete dawn/restart lifecycle. Eight new WAV files regenerate byte-for-byte, remain below clipping, and have zero-valued endpoints. The generator uses only Python's standard library; no external recordings are used.
 
 The full state/profile/geometry/sound suites, three scene seeds and walking route passed. Fresh Linux standalone smoke and Windows-through-Wine smoke also passed. Native Windows CI still needs to verify this revision. No human listening test or hardware frame-rate claim has been made. No final release has been declared.
+
+## Passenger ledger and fare wording
+
+The paused route ledger now has a passenger page showing all four requests, current carriage locations, current offers, completed thanks and the total sealed fares still to bank. Switching pages preserves the same route and switchboard controls. Locations follow actual passenger positions after shunting, and unaccepted offers reflect the current dining/last-carriage resonance. Completed entries do not imply an already banked fare remains pending.
+
+The page was rendered normally and with a completed-passenger/£75 presentation fixture at 960×540. That fixture used the real page button and an actual timetable rotation, verifying the astronomer's carriage changed from 01 to 02. Scene smoke passed after the new page and signal connection. The existing bell math is unchanged: bonuses apply to carried freight, while sealed fares retain their quoted value. HUD, relic prompt and guide wording now say this consistently.
+
+Native Windows CI passed the live-assessment checkpoint 5a46bf2 (40868649503) and audio checkpoint c41f87d (40870264952). This ledger revision still needs its own native check. No final release has been declared.

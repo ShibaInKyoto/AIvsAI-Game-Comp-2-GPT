@@ -10,6 +10,7 @@ signal setting_changed(key: String, value: float)
 signal endless_requested
 signal next_service_requested
 signal shunt_requested(first: int, second: int)
+signal route_page_requested
 var root: Control
 var hud: Control
 var menu: Control
@@ -47,6 +48,7 @@ var settings_box: VBoxContainer
 var mode := "title"
 var route_buttons: Control
 var route_rows: Control
+var route_commissions := false
 var best := 0
 var best_long := 0
 
@@ -129,7 +131,7 @@ func _ready() -> void:
 	guide_panel = rules
 	rect(rules, Vector2(0, 0), Vector2(410, 2), gold)
 	guide_heading = label(rules, Vector2(28, 24), "A PORTER'S FIELD GUIDE", 22, true)
-	var guide := "01   TAKE WHAT SHOULD NOT EXIST\nExplore seven carriages. Carry three relics.\nDeeper freight pays more. E to collect.\n\n02   MAKE IT BACK TO THE COUNTER\nBank £600 before dawn to buy your freedom.\nUnbanked freight is lost when time runs out.\n\n03   PACK WITH INTENTION\nHours buy time. Bells multiply a delivery.\nDoorways fold you home. Aurora calms you.\n\n04   THE CONDUCTOR IS LISTENING\nRun when safe. Sneak off the central aisle\nto pass him. Bells carry farther than footsteps.\nCaught? Freight resets; lose 15s, not savings.\n\n05   YOUR FIRST TWO DELIVERIES\nEarn a free upgrade at the exchange.\nT turns the train for 2 pressure and 10s.\nTab swaps neighbors for 1 pressure and 6s.\nEscape early with Q once your debt is paid."
+	var guide := "01   TAKE WHAT SHOULD NOT EXIST\nExplore seven carriages. Carry three relics.\nDeeper freight pays more. E to collect.\n\n02   MAKE IT BACK TO THE COUNTER\nBank £600 before dawn to buy your freedom.\nUnbanked freight is lost when time runs out.\n\n03   PACK WITH INTENTION\nHours buy time. Bells boost carried freight.\nDoorways fold you home. Aurora calms you.\n\n04   THE CONDUCTOR IS LISTENING\nRun when safe. Sneak off the central aisle\nto pass him. Bells carry farther than footsteps.\nCaught? Freight resets; lose 15s, not savings.\n\n05   YOUR FIRST TWO DELIVERIES\nEarn a free upgrade at the exchange.\nT turns the train for 2 pressure and 10s.\nTab swaps neighbors for 1 pressure and 6s.\nEscape early with Q once your debt is paid."
 	guide_text = guide
 	guide_body = label(rules, Vector2(28, 70), guide, 14)
 	guide_body.size = Vector2(354, 430)
@@ -366,7 +368,7 @@ func update(run: MidnightRun, car: int, energy: float, threat: float, message: S
 	status_label.text = "TICKET %d  /  COMPOSURE %d%%%s" % [run.seed_value, int(run.composure), "  /  SNEAKING" if is_sneaking else ""]
 	progress.value = 100.0 * run.banked / MidnightRun.TARGET
 	stamina.value = energy
-	manifest_label.text = "MANIFEST  %d/%d    •    BELLS MULTIPLY THE WHOLE DELIVERY    •    SELECT 1–5 / DROP X" % [run.inventory.size(), run.capacity]
+	manifest_label.text = "MANIFEST  %d/%d    •    BELLS MULTIPLY CARRIED FREIGHT    •    SELECT 1–5 / DROP X" % [run.inventory.size(), run.capacity]
 	for index in range(inventory_labels.size()):
 		var slot := inventory_labels[index]
 		inventory_icons[index].hide()
@@ -389,7 +391,7 @@ func update(run: MidnightRun, car: int, energy: float, threat: float, message: S
 	threat_label.text = "THE CONDUCTOR IS CLOSE  /  leave the aisle, hold Ctrl, keep quiet" if threat > 0.35 else ""
 	danger.color.a = threat * 0.16
 
-func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: MidnightRun, can_shunt := false, porter_slot := 0) -> void:
+func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: MidnightRun, can_shunt := false, porter_slot := 0, commission_notes := "") -> void:
 	reset_guide()
 	mode = "route"
 	menu.show()
@@ -417,6 +419,10 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 	guide_heading.text = "RESONANCE COUPLINGS"
 	guide_body.add_theme_font_size_override("font_size", 15)
 	guide_body.text = "Some rooms remember each other. Place these carriages next to one another to awaken a resonance.\n\nOBSERVATORY + WINTER GARDEN\n%s\nBanking bottled aurora also grants 12 seconds per bottle.\n\nARCHIVE + CHOIR\n%s\nBells are muffled while you are inside either of these carriages.\n\nDINING ROOM + LAST CARRIAGE\n%s\nPassenger commissions offer 25%% larger sealed fares.\n\n%s" % ["AWAKE" if train.paired(1, 2) else "DORMANT", "AWAKE" if train.paired(4, 5) else "DORMANT", "AWAKE" if train.paired(3, 6) else "DORMANT", "Pressure: +1 for each £150 banked.\nT uses 2; each arrow uses 1." if can_shunt else "Return to the brass counter to operate the switchboard."]
+	if route_commissions:
+		guide_heading.text = "PASSENGER COMMISSIONS"
+		guide_body.add_theme_font_size_override("font_size", 14)
+		guide_body.text = commission_notes
 	if can_shunt:
 		for slot in range(1, MidnightTrain.COUNT):
 			for direction in [-1, 1]:
@@ -453,6 +459,14 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 				route_buttons.add_child(item)
 	button("RETURN TO THE NIGHT   /   TAB OR ESC   →", func(): resume_requested.emit())
 	menu_buttons.position.y = 626
+	var ledger_toggle := button("RESONANCE COUPLINGS   →" if route_commissions else "PASSENGER COMMISSIONS   →", toggle_route_page, route_buttons)
+	ledger_toggle.position = Vector2(780, 626)
+	ledger_toggle.custom_minimum_size = Vector2(410, 44)
+	ledger_toggle.size = Vector2(410, 44)
+
+func toggle_route_page() -> void:
+	route_commissions = not route_commissions
+	route_page_requested.emit()
 
 func reset_guide() -> void:
 	if is_instance_valid(guide_body):

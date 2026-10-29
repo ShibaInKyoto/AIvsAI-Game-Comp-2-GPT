@@ -76,6 +76,7 @@ func _ready() -> void:
 		service += 1
 		start_ticket(false))
 	interface.shunt_requested.connect(shunt_carriages)
+	interface.route_page_requested.connect(refresh_route)
 	interface.resume_requested.connect(resume)
 	interface.quit_requested.connect(to_title)
 	interface.exit_requested.connect(shutdown)
@@ -223,7 +224,7 @@ func start_ticket(daily: bool, forced_seed := 0) -> void:
 	dawn_warning = false
 	interface.enter_game()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if not smoke and not capture else Input.MOUSE_MODE_VISIBLE
-	notify("Bank £600 before dawn. The brass counter behind you is your sanctuary.", 7)
+	notify("Bank £600 before dawn. The counter behind you is sanctuary. Tab opens the route and passenger ledger.", 7)
 
 func _input(event: InputEvent) -> void:
 	# Menu shortcuts must run before focused buttons consume Tab for navigation.
@@ -281,7 +282,16 @@ func pause() -> void:
 
 func refresh_route() -> void:
 	var slot := clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, 6)
-	interface.show_route(train, freight, run, at_counter(), slot)
+	var notes := "SEALED FARES TO BANK: £%d\nNo slots; fixed fares survive capture.\n\n" % run.pending_fares
+	for passenger in passengers:
+		var identity := passenger.identity
+		var carriage := clampi(roundi(-passenger.position.z / MidnightTrain.LENGTH), 1, 6)
+		notes += "%s  /  CAR %02d\n" % [MidnightPassenger.NAMES[identity], carriage]
+		if passenger.completed:
+			notes += "HELPED  /  THANK YOU\n“%s”\n\n" % MidnightPassenger.THANKS[identity]
+		else:
+			notes += "%s → £%d sealed\n“%s”\n\n" % [MidnightFreight.TYPES[MidnightPassenger.NEEDS[identity]], passenger_fare(identity), MidnightPassenger.REQUESTS[identity]]
+	interface.show_route(train, freight, run, at_counter(), slot, notes)
 
 func resume() -> void:
 	paused = false
@@ -682,8 +692,9 @@ func capture_frame() -> void:
 		run.banked = 740
 		run.commissions = {0: true, 1: true, 2: true, 3: true}
 		finish_run()
-	if "--capture-route" in OS.get_cmdline_user_args():
+	if "--capture-route" in OS.get_cmdline_user_args() or "--capture-commissions" in OS.get_cmdline_user_args():
 		paused = true
+		interface.route_commissions = "--capture-commissions" in OS.get_cmdline_user_args()
 	if "--capture-title" in OS.get_cmdline_user_args():
 		to_title()
 	if "--capture-settings" in OS.get_cmdline_user_args() or "--capture-credits" in OS.get_cmdline_user_args():
@@ -730,7 +741,7 @@ func capture_frame() -> void:
 			run.take(kind, 20 + kind * 10, 700 + kind)
 		if held_capture >= 0:
 			run.selected = held_capture
-	if "--capture-route" in OS.get_cmdline_user_args():
+	if "--capture-route" in OS.get_cmdline_user_args() or "--capture-commissions" in OS.get_cmdline_user_args():
 		refresh_route()
 	for frame in range(40):
 		await get_tree().process_frame

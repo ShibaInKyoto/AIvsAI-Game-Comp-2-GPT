@@ -82,4 +82,4 @@ func title() -> String:
 	return TYPES[kind]
 
 func effect() -> String:
-	return ["Bank: +18 seconds", "Loud: attracts the conductor • +25% trip bonus", "F: consume to fold home, keeping other freight", "Carried: muffles bells • Bank: restores composure"][kind]
+	return ["Bank: +18 seconds", "Loud: attracts the conductor • +25% carried freight", "F: consume to fold home, keeping other freight", "Carried: muffles bells • Bank: restores composure"][kind]

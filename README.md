@@ -4,7 +4,7 @@ A native 3D game about impossible freight on the last train before dawn. Built i
 
 ![The midnight service crosses the viaduct](docs/screenshots/title.png)
 
-You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells increase the value of an entire delivery but attract attention. Bottled hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside. Shunt neighboring carriages to awaken resonance bonuses. Four passenger commissions trade your tools for sealed fares and a different dawn. An escalating endless-service mode tracks your whole voyage.
+You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells multiply carried freight but attract attention. Stolen hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside. Shunt neighboring carriages to awaken resonance bonuses. Four passenger commissions trade your tools for sealed fares and a different dawn. An escalating endless-service mode tracks your whole voyage.
 
 ![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
