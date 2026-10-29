@@ -87,3 +87,10 @@ The route ledger now marks the player's current carriage with [YOU], using the s
 ## Approaching dawn
 
 The sky and ambient light gradually warm during the final ninety seconds. A single final-minute reminder waits for the current notification to finish, then tells the porter to bank freight or use a doorway. The normal timer remains authoritative; hours can delay the visual dawn again. The late-run garden capture rendered correctly, and scene smoke passed after the change. Route-marker revision 0b7441c is awaiting native Windows CI (run 40842493053).
+
+
+## Native input and event feedback
+
+Native Windows CI passed both route-marker revision 0b7441c and approaching-dawn revision f57902e (runs 40842493053 and 40842861117). The current Linux standalone was exercised through X11 keyboard/mouse events: title interaction, movement, mouse look, pause/resume, conductor capture/recovery, and resizing to the minimum 960×540 window. The interface scales correctly after the resize frame settles. Synthetic input timing under llvmpipe was unreliable, so no complete manual collection/banking or human playtest is claimed; those interactions remain covered by scene integration tests. The native run produced no script/runtime errors.
+
+Folding, banking and capture now give a brief, muted color transition beneath the HUD. This makes instant relocation and delivery changes easier to read without obscuring text. Scene smoke passed with all three event effects executing. The README now links to development build artifacts so visiting judges can find the current Windows ZIP before the final release. No final release has been declared.

@@ -36,6 +36,8 @@ const ICONS := [preload("res://assets/icons/hour.svg"), preload("res://assets/ic
 var progress: Meter
 var stamina: Meter
 var danger: ColorRect
+var feedback: ColorRect
+var feedback_tween: Tween
 var title_font := preload("res://assets/fonts/display.ttf")
 var body_font := preload("res://assets/fonts/body.ttf")
 var gold := Color("d8b77e")
@@ -53,6 +55,8 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 	danger = rect(root, Vector2.ZERO, Vector2(1280, 720), Color(0.6, 0.05, 0.07, 0))
+	feedback = rect(root, Vector2.ZERO, Vector2(1280, 720), Color(0, 0, 0, 0))
+	feedback.hide()
 	hud = Control.new()
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hud)
@@ -321,6 +325,15 @@ func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage
 func enter_game() -> void:
 	menu.hide()
 	hud.show()
+
+func flash(tint: Color, strength: float) -> void:
+	if feedback_tween != null and feedback_tween.is_valid():
+		feedback_tween.kill()
+	feedback.color = Color(tint, strength)
+	feedback.show()
+	feedback_tween = create_tween()
+	feedback_tween.tween_property(feedback, "color:a", 0.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	feedback_tween.tween_callback(feedback.hide)
 
 func update(run: MidnightRun, car: int, energy: float, threat: float, message: String, is_sneaking: bool) -> void:
 	room_label.text = "%02d / %s" % [car, MidnightTrain.NAMES[car]]

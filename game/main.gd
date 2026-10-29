@@ -357,6 +357,7 @@ func interact() -> void:
 		if earned > 0:
 			run.remaining = minf(MidnightRun.DURATION + 60, run.remaining + aurora_time)
 			sound.play("bank")
+			interface.flash(Color("d8b77e"), 0.14)
 			notify("£%d exchanged. %s" % [earned, "Your debt is paid! Q at the counter to leave, or keep going." if run.banked >= MidnightRun.TARGET else "Your savings are safe."], 5)
 		else:
 			notify("The counter banks your freight. Find relics in the carriages ahead.")
@@ -447,6 +448,7 @@ func fold_home() -> void:
 		player.velocity = Vector3.ZERO
 		grace = 8
 		sound.play("fold")
+		interface.flash(Color("ac8bd1"), 0.32)
 		notify("Space folds like a ticket. The counter welcomes you back.")
 	else:
 		notify("Carry a Folded doorway to fold home with F.")
@@ -467,6 +469,7 @@ func caught() -> void:
 	grace = 12
 	conductor.position.z = -78
 	sound.play("caught")
+	interface.flash(Color("ad423a"), 0.32)
 	notify("The conductor returns your freight to its displays. −15 seconds. Savings are safe.", 6)
 
 func finish_run() -> void:
