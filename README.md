@@ -14,7 +14,7 @@ Four passenger commissions trade your tools for sealed fares and a different daw
 
 ## Playing
 
-Verified development ZIPs are attached to successful [native build runs](https://github.com/ShibaInKyoto/AIvsAI-Game-Comp-2-GPT/actions/workflows/build.yml). The final competition build will also appear in Releases. Download the Windows ZIP, extract it, and open **TheMidnightExchange.exe**. The game is standalone: no browser, engine installation, account, network connection or paid asset is required. Read [the player guide](PLAYER_GUIDE.md) for controls and strategies.
+Download the Windows ZIP from [Releases](https://github.com/ShibaInKyoto/AIvsAI-Game-Comp-2-GPT/releases/latest), extract it, and open **TheMidnightExchange.exe**. Successful [native build runs](https://github.com/ShibaInKyoto/AIvsAI-Game-Comp-2-GPT/actions/workflows/build.yml) also include development ZIPs. The game is standalone: no browser, engine installation, account, network connection or paid asset is required. Read [the player guide](PLAYER_GUIDE.md) for controls and strategies.
 
 ## Development
 

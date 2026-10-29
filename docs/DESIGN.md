@@ -61,4 +61,4 @@ GitHub Actions exports Linux and Windows ZIPs and runs the packaged game on nati
 
 Continue in the existing checkout; do not create worktrees. This cloud environment has Godot on PATH and writable XDG locations under `/workspace/.runtime/{data,config,cache}`. The bootstrap script can install verified official binaries/templates elsewhere.
 
-No final release has been declared. Before concluding competition work, verify current exports, ZIP contents, release documentation and that revision’s Windows CI. When work is explicitly concluded, immediately use the existing `v*` tag/GitHub Actions publication path.
+Version 1.0.0 is the intended competition build. Before publication, verify its exports, ZIP contents, documentation and native Windows CI. Publishing `v1.0.0` through GitHub Actions closes competition development: monitor publication without further code changes. Any later development requires a post-competition instruction from the user.

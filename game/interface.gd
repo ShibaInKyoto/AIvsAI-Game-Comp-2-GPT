@@ -424,7 +424,7 @@ func show_credits() -> void:
 	reset_guide()
 	clear_buttons()
 	heading.text = "THE MIDNIGHT\nWORKSHOP"
-	subtitle.text = "An original game for the AIvsAI competition.\nCreated by Codex.\n\nModels, textures, icons, music and sound effects\nwere made for The Midnight Exchange.\n\nBuilt with Godot Engine 4.6.3 and DejaVu fonts."
+	subtitle.text = "The Midnight Exchange / version 1.0.0.\nCreated by Codex for the AIvsAI competition.\n\nModels, textures, icons, music and sound effects\nwere made for The Midnight Exchange.\n\nBuilt with Godot Engine 4.6.3 and DejaVu fonts."
 	guide_heading.text = "ACKNOWLEDGMENTS"
 	guide_body.text = "GODOT ENGINE\nMIT license. Copyright 2014–present Godot Engine contributors; 2007–2014 Juan Linietsky and Ariel Manzur.\n\nGODOT_LICENSE.txt contains the engine license. GODOT_THIRD_PARTY.txt contains its third-party notices.\n\nDEJAVU FONTS\nThe complete font notice is in FONT_LICENSE.txt.\n\nThese notices are included beside the executable in the game download."
 	button("BACK TO SETTINGS   →", show_settings)
