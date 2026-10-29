@@ -40,7 +40,7 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 - `game/dawn.gd`: the real-time station epilogue.
 - `game/title_scene.gd`: the locomotive and viaduct title tableau.
 - `game/profile.gd`: validated, replace-on-success settings and records.
-- `game/interface.gd`, `sound.gd`: scalable UI and original soundscape.
+- `game/interface.gd`, `sound.gd`: scalable UI, carriage ambience and the night-to-dawn score.
 - `assets/`: original modeled props/relics, generated textures/audio, DejaVu fonts and engine notices.
 - `tests/`: simulation invariants; integration tests also exercise the running scene.
 - `scripts/`: reproducible asset generation (including optional Blender 4.3 modeling), verified tool installation, validation.
@@ -50,3 +50,5 @@ Pushes build downloadable native artifacts. Version tags run both Linux and nati
 For an optional live-conductor balance diagnostic, run `godot --headless --fixed-fps 120 --path . --script scripts/assess_live.gd -- --qa-seed=20261029`. This porter knows the freight layout and uses ordinary movement, cover, folding and timetable costs. It changes no threat or economy rules. A failed heuristic run does not establish that a ticket is unwinnable; this diagnostic is separate from the deterministic build checks.
 
 Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.
+
+`python3 scripts/generate_audio.py` rebuilds the original score, effects and carriage ambience using the Python standard library. `scripts/generate_ambience.py` can rebuild just the room loops and morning theme.

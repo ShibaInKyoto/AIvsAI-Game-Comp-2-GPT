@@ -4,6 +4,7 @@ from pathlib import Path
 import math
 import random
 import wave
+from generate_ambience import generate_all
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'audio'
 OUT.mkdir(parents=True, exist_ok=True)
@@ -65,3 +66,5 @@ with wave.open(str(OUT / 'train.wav'), 'wb') as f:
     f.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
     f.writeframes(samples.tobytes())
 print('Generated original score, train ambience and seven effects.')
+
+generate_all()

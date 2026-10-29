@@ -25,6 +25,7 @@ Simulation/economy (`run_state.gd`) is independent of the scene tree. Main compo
 ## Validation
 
 - State suite: 103,035 checks, including 25,000 randomized actions across 100 seeds, plus 1,000 deterministic initial train orders.
+- Sound suite: 50 checks of imported compressed-loop lengths, room crossfades, dawn/restart and stream cleanup.
 - Scene smoke: pickup/drop/recover/bank, upgrades, actual switchboard button and exact time charge, all three resonance effects, passenger trade, actual floor and window collision, folding, conductor collision/recovery, result/route/settings UI.
 - Walking route: 228m aisle round trip, twelve physical pickups, two rotations, separately timed £655 extraction, dawn scene and restart into a harder service.
 - Release exports use explicit checks, never stripped `assert()` calls.
@@ -148,3 +149,11 @@ scripts/assess_live.gd preserves the revised diagnostic porter outside the shipp
 The policy completed tickets 90210 (£717, 202.6s left), 37 (£632, 247.5s), 20261028 (£630, 226.4s), and 20261029 (£699, 235.4s). Each used normal banked-hour bonuses and finished with no captures; no bells were abandoned. The first three used the temporary controller before source cleanup; the daily ticket used the checked-in script path. This replaces the earlier unreliable center-aisle policy as the current assessment tool. It remains optional because heuristic failures do not establish that a ticket is impossible. No human playtest has been claimed.
 
 Native Windows CI passed the satchel revision 64a455a (run 40866572885) and switchboard revision a8f8218 (40867143462). No final release has been declared.
+
+## Rooms heard and a morning earned
+
+Seven original, quiet twelve-second carriage textures add clock ticks, glass harmonics, wind/leaves, porcelain, pages, organ breath and a distant melody. They follow room identity when the timetable changes. Room changes crossfade over 0.9 seconds, and silent loops pause playback. At a successful dawn, the train wheels and night score fade out over 1.5 seconds into an original twenty-four-second D-major theme. Returning to title or boarding another service restores the night audio. Shutdown stops transition processing before releasing streams.
+
+Audio integration exposed an existing loop-length defect: imported WAVs use QOA compression, so raw byte count was truncating the music and rail loops. Loop boundaries now use decoded duration × sample rate. The fifty-check sound suite loads the actual imported resources and exercises the complete dawn/restart lifecycle. Eight new WAV files regenerate byte-for-byte, remain below clipping, and have zero-valued endpoints. The generator uses only Python's standard library; no external recordings are used.
+
+The full state/profile/geometry/sound suites, three scene seeds and walking route passed. Fresh Linux standalone smoke and Windows-through-Wine smoke also passed. Native Windows CI still needs to verify this revision. No human listening test or hardware frame-rate claim has been made. No final release has been declared.

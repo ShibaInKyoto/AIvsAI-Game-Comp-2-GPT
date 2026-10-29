@@ -21,6 +21,7 @@ run_checked "$GODOT_BIN" --headless --path . --editor --import
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/run_state_test.gd
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/profile_test.gd
 run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/geometry_test.gd
+run_checked timeout 45 "$GODOT_BIN" --headless --path . --script tests/sound_test.gd
 for ticket in 90210 37 20261028; do
   run_checked timeout 45 "$GODOT_BIN" --headless --path . -- --smoke-test "--qa-seed=$ticket"
 done

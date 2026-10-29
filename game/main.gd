@@ -206,6 +206,8 @@ func start_ticket(daily: bool, forced_seed := 0) -> void:
 	run = MidnightRun.new()
 	run.begin(ticket)
 	build_world(ticket)
+	sound.set_dawn(false)
+	sound.enter_room(0)
 	run.remaining = maxf(150, MidnightRun.DURATION - maxi(0, service - 1) * 15)
 	conductor.speed = 2.15 + minf(2.0, maxi(0, service - 1) * 0.3)
 	visited = {0: true}
@@ -294,6 +296,8 @@ func to_title() -> void:
 	interface.show_title(best, best_voyage)
 
 func build_title_world() -> void:
+	sound.set_dawn(false)
+	sound.enter_room(-1)
 	if is_instance_valid(world_root):
 		remove_child(world_root)
 		world_root.queue_free()
@@ -489,6 +493,8 @@ func finish_run() -> void:
 	if service > 0:
 		voyage_total += run.banked
 		best_voyage = maxi(best_voyage, voyage_total)
+	sound.enter_room(-1)
+	sound.set_dawn(run.won)
 	save_settings()
 	if run.won and not smoke:
 		build_dawn()
@@ -577,6 +583,7 @@ func _physics_process(delta: float) -> void:
 		notify("The horizon is paling. Bank your freight before dawn; F folds home with a doorway.", 6)
 	var car := clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, MidnightTrain.COUNT - 1)
 	var identity: int = train.car_order[car]
+	sound.enter_room(identity)
 	if not visited.has(identity):
 		visited[identity] = true
 		if notice_time < 1:
