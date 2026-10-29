@@ -56,3 +56,13 @@ The quiet-side-passage mechanic now has a 1.5m base crouched hearing radius, wit
 ## Original relic art
 
 Four original Blender antiques replace the shared cage primitives: a pocket watch, hollow choir bell, folding miniature doorway and glass aurora bottle. The doorway and bottle use animated material effects; their identities and interaction positions remain unchanged. All four were inspected in the actual renderer. Geometry helpers now live in scripts/modeling.py and are shared by the prop/relic generators. Rebuilding props preserved dimensions, counts and material layout but Blender produced small triangulation/normal differences, so the existing prop binaries were retained. The full validator and fresh Linux export passed. Engine/font notices are included in native ZIP packaging. The stealth milestone baef534 passed native Windows CI.
+
+## Title scene, profile handling and directional sound
+
+The title menu now presents an original modeled locomotive crossing a moonlit viaduct, with animated steam, valley mist and camera drift. The field guide has its own button; settings and quitting are accessible from the title. Camera motion settings also govern the title camera. The composed title view measured 40 draw calls under llvmpipe; the scene alone measured 22. Four-sample 3D anti-aliasing smooths geometry edges. Long notification text now wraps above the HUD. The full four-passenger dawn epilogue was visually checked and fits its panel.
+
+Conductor chimes now use a real 3D sound source. The profile module validates each field independently, recovers from corrupt JSON, and replaces the saved file only after a complete write. Sixteen profile checks cover invalid fields, limits, replacement and interrupted writes. Exported scene smoke tests also replace an isolated QA profile, including on native Windows CI.
+
+Title work exposed an indexed/non-indexed mesh batching defect. The shared batcher now normalizes non-indexed custom surfaces before appending them; a regression checks that custom triangles remain referenced when merged with a cube. The state, profile, geometry, three-seed scene and walking-route suites passed. Fresh Linux standalone smoke passed, and title/results captures rendered cleanly. The preceding relic-art commit 320e02f passed native Windows CI. This checkpoint needs its own pushed CI result before it is treated as Windows-verified.
+
+Continue independent development after this checkpoint; no final release has been declared. Preserve the existing checkout and pending work across model/usage changes. User switched reasoning effort from Ultra to High to conserve budget and may switch model; this does not change the game requirements or authorize a final declaration.

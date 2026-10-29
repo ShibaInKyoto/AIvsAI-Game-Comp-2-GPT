@@ -34,15 +34,28 @@ func play(name: String, pitch := 1.0, volume := 0.0) -> void:
 	player.finished.connect(player.queue_free)
 	player.play()
 
-func threat(delta: float, level: float) -> void:
+func threat(delta: float, level: float, source: Vector3) -> void:
 	chime_timer -= delta
 	if level > 0.3 and chime_timer <= 0:
-		play("chime", 0.85 + level * 0.15, linear_to_db(maxf(0.1, level)))
+		# A real world-space cue lets headphones reveal which way he is approaching.
+		var player := AudioStreamPlayer3D.new()
+		player.stream = effects.chime
+		player.position = source
+		player.pitch_scale = 0.85 + level * 0.15
+		player.unit_size = 7
+		player.max_distance = 35
+		player.volume_db = -2
+		add_child(player)
+		player.finished.connect(player.queue_free)
+		player.play()
 		chime_timer = lerpf(5, 1.8, level)
 
 func silence() -> void:
 	for child in get_children():
 		if child is AudioStreamPlayer:
+			child.stop()
+			child.stream = null
+		elif child is AudioStreamPlayer3D:
 			child.stop()
 			child.stream = null
 	effects.clear()

@@ -39,6 +39,8 @@ The conductor walks the central aisle. Give him space. Hold Ctrl and step into a
 
 The exchange is a sanctuary. The conductor cannot enter it. T moves the last carriage to the front, shortening some routes—but the conductor travels with his carriage. Listen for his chime and watch for the red lantern.
 
+The chime comes from his position in the train. Turn your head or use headphones to hear his direction; the HUD also warns when he is near and when he hears you.
+
 ## Tips
 
 Bank an early delivery for a free upgrade. A bell is worth more when the rest of your satchel is valuable. Save doorways for long journeys. The timetable changes the route without creating new freight; turning it repeatedly costs precious time. Sneaking is slower but helps you pass safely. You can finish a run even after a bad encounter.

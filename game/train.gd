@@ -383,7 +383,16 @@ func batch_geometry(parent: Node3D) -> void:
 				tool.set_material(surface)
 				batches[surface] = tool
 			var tool: SurfaceTool = batches[surface]
-			tool.append_from(child.mesh, index, child.transform)
+			var indices: Variant = child.mesh.surface_get_arrays(index)[Mesh.ARRAY_INDEX]
+			if indices == null or indices.is_empty():
+				# append_from cannot safely mix indexed and non-indexed surfaces.
+				# Normalize custom geometry so later primitives cannot hide its faces.
+				var indexed := SurfaceTool.new()
+				indexed.create_from(child.mesh, index)
+				indexed.index()
+				tool.append_from(indexed.commit(), 0, child.transform)
+			else:
+				tool.append_from(child.mesh, index, child.transform)
 		for body in child.get_children():
 			if body is StaticBody3D:
 				var pose: Transform3D = child.transform * body.transform

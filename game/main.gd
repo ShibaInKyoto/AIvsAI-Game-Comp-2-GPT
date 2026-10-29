@@ -75,13 +75,13 @@ func _ready() -> void:
 	interface.shunt_requested.connect(shunt_carriages)
 	interface.resume_requested.connect(resume)
 	interface.quit_requested.connect(to_title)
+	interface.exit_requested.connect(shutdown)
 	interface.setting_changed.connect(change_setting)
 	interface.set_meta("sensitivity", sensitivity)
 	interface.set_meta("volume", volume)
 	interface.set_meta("motion", motion)
 	interface.show_title(best, best_voyage)
-	build_world(90210)
-	camera.rotation_degrees = Vector3(-5, -16, 0)
+	build_title_world()
 	if "--soak-test" in OS.get_cmdline_user_args():
 		call_deferred("soak_test")
 	elif smoke:
@@ -277,7 +277,25 @@ func to_title() -> void:
 	playing = false
 	paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	build_title_world()
 	interface.show_title(best, best_voyage)
+
+func build_title_world() -> void:
+	if is_instance_valid(world_root):
+		remove_child(world_root)
+		world_root.queue_free()
+	freight.clear()
+	passengers.clear()
+	var platform := MidnightTitle.new()
+	platform.camera_motion = motion
+	world_root = platform
+	add_child(platform)
+	camera = platform.build()
+	camera.make_current()
+	sky_material.set_shader_parameter("dawn", 0.0)
+	atmosphere.ambient_light_color = Color("9bb3c4")
+	atmosphere.ambient_light_energy = 0.48
+	moon.light_color = Color("90b8dc")
 
 func shutdown() -> void:
 	playing = false
@@ -513,7 +531,7 @@ func _physics_process(delta: float) -> void:
 	camera.fov = lerpf(camera.fov, (78.0 + 5.0 * motion) if sprinting else 78.0, delta * 5)
 	var noise := hearing_radius(sprinting, sneaking)
 	threat = conductor.advance(delta, player.position, noise, grace)
-	sound.threat(delta, threat)
+	sound.threat(delta, threat, conductor.global_position + Vector3(0, 1.6, 0))
 	var distance := conductor.position.distance_to(player.position)
 	if distance < 9 and player.position.z < -12 and grace <= 0:
 		run.composure -= delta * (7 if conductor.alert else 3)
@@ -584,30 +602,25 @@ func change_setting(key: String, value: float) -> void:
 		"sensitivity": sensitivity = value
 		"motion": motion = value
 		"volume": volume = value
+	if world_root is MidnightTitle:
+		world_root.camera_motion = motion
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, volume)))
 	save_settings()
 
 func load_settings() -> void:
-	if FileAccess.file_exists(SAVE_PATH):
-		var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-		if file:
-			var data = JSON.parse_string(file.get_as_text())
-			if data is Dictionary:
-				best = maxi(0, int(data.get("best", 0)))
-				best_voyage = maxi(0, int(data.get("best_voyage", 0)))
-				sensitivity = clampf(float(data.get("sensitivity", 1)), 0.3, 2)
-				motion = clampf(float(data.get("motion", 0.35)), 0, 1)
-				volume = clampf(float(data.get("volume", 0.65)), 0, 1)
+	var data := MidnightProfile.read_file(SAVE_PATH)
+	best = data.best
+	best_voyage = data.best_voyage
+	sensitivity = data.sensitivity
+	motion = data.motion
+	volume = data.volume
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, volume)))
 
 func save_settings() -> void:
 	if smoke or capture:
 		return
-	var file := FileAccess.open(SAVE_PATH + ".tmp", FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify({"version": 1, "best": best, "best_voyage": best_voyage, "sensitivity": sensitivity, "motion": motion, "volume": volume}))
-		file.close()
-		DirAccess.rename_absolute(SAVE_PATH + ".tmp", SAVE_PATH)
+	if not MidnightProfile.write_file(SAVE_PATH, {"best": best, "best_voyage": best_voyage, "sensitivity": sensitivity, "motion": motion, "volume": volume}):
+		push_warning("The local profile could not be saved. This journey can continue.")
 
 func capture_frame() -> void:
 	notice_time = 0
@@ -656,6 +669,11 @@ func verify(condition: bool, message: String) -> void:
 		push_error(message)
 
 func smoke_test() -> void:
+	verify(world_root is MidnightTitle and camera.is_inside_tree(), "Title scene did not build")
+	var qa_profile := "user://qa_scene_%d.json" % OS.get_process_id()
+	verify(MidnightProfile.write_file(qa_profile, {"best": 600}), "Initial profile write failed")
+	verify(MidnightProfile.write_file(qa_profile, {"best": 800}) and MidnightProfile.read_file(qa_profile).best == 800, "Profile replacement failed")
+	DirAccess.remove_absolute(qa_profile)
 	start_ticket(false, qa_seed)
 	verify(freight.size() == 18, "Freight generation failed")
 	var cargo := freight[0]
@@ -751,6 +769,7 @@ func smoke_test() -> void:
 	await get_tree().physics_frame
 	verify(run.finished and not playing, "Run completion failed")
 	verify(interface.mode == "result", "Result UI failed")
+	verify(interface.guide_panel.visible and not interface.title_shade.visible, "Result epilogue must replace title presentation")
 	interface.show_route(train, freight, run, at_counter())
 	verify(interface.mode == "route" and "relics" in interface.subtitle.text, "Route ledger failed")
 	interface.show_settings()

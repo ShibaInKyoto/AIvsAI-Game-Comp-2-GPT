@@ -5,6 +5,7 @@ extends CanvasLayer
 signal play_requested(daily: bool)
 signal resume_requested
 signal quit_requested
+signal exit_requested
 signal setting_changed(key: String, value: float)
 signal endless_requested
 signal next_service_requested
@@ -13,6 +14,8 @@ var root: Control
 var hud: Control
 var menu: Control
 var menu_shade: ColorRect
+var title_shade: TextureRect
+var guide_panel: Control
 var guide_body: Label
 var guide_heading: Label
 var guide_text := ""
@@ -83,12 +86,26 @@ func _ready() -> void:
 		inventory_labels.append(slot)
 	label(bottom, Vector2(18, 122), "WASD  WALK     SHIFT  RUN     CTRL  SNEAK     E  INTERACT     F  FOLD HOME     TAB  ROUTE     X  DROP     T  TIMETABLE     ESC  PAUSE", 11)
 	stamina = bar(hud, Vector2(1050, 520), Vector2(200, 4), Color("9fcac2"))
-	notice_label = label(hud, Vector2(160, 450), "", 21, true)
-	notice_label.size.x = 960
+	notice_label = label(hud, Vector2(160, 438), "", 21, true)
+	notice_label.size = Vector2(960, 84)
+	notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	menu = Control.new()
 	root.add_child(menu)
 	menu_shade = rect(menu, Vector2.ZERO, Vector2(1280, 720), Color(0.018, 0.032, 0.05, 0.91))
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0, 0.43, 0.70, 1])
+	gradient.colors = PackedColorArray([Color(0.018, 0.032, 0.05, 0.98), Color(0.018, 0.032, 0.05, 0.94), Color(0.018, 0.032, 0.05, 0.1), Color(0.018, 0.032, 0.05, 0)])
+	var gradient_texture := GradientTexture2D.new()
+	gradient_texture.gradient = gradient
+	gradient_texture.width = 1280
+	gradient_texture.height = 1
+	title_shade = TextureRect.new()
+	title_shade.texture = gradient_texture
+	title_shade.size = Vector2(1280, 720)
+	title_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(title_shade)
 	rect(menu, Vector2(62, 55), Vector2(2, 620), gold)
 	label(menu, Vector2(92, 56), "NIGHT SERVICE  /  EST. 1893", 14).modulate = gold
 	heading = label(menu, Vector2(90, 103), "THE MIDNIGHT\nEXCHANGE", 60, true)
@@ -102,6 +119,7 @@ func _ready() -> void:
 	menu_buttons.add_theme_constant_override("separation", 10)
 	menu.add_child(menu_buttons)
 	var rules := rect(menu, Vector2(780, 94), Vector2(410, 526), Color(0.06, 0.1, 0.13, 0.96))
+	guide_panel = rules
 	rect(rules, Vector2(0, 0), Vector2(410, 2), gold)
 	guide_heading = label(rules, Vector2(28, 24), "A PORTER'S FIELD GUIDE", 22, true)
 	var guide := "01   TAKE WHAT SHOULD NOT EXIST\nExplore seven carriages. Carry three relics.\nDeeper freight pays more. E to collect.\n\n02   MAKE IT BACK TO THE COUNTER\nBank £600 before dawn to buy your freedom.\nUnbanked freight is lost when time runs out.\n\n03   PACK WITH INTENTION\nHours buy time. Bells multiply a delivery.\nDoorways fold you home. Aurora calms you.\n\n04   THE CONDUCTOR IS LISTENING\nRun when safe. Sneak off the central aisle\nto pass him. Bells carry farther than footsteps.\nCaught? Freight resets; lose 15s, not savings.\n\n05   YOUR FIRST TWO DELIVERIES\nEarn a free upgrade at the exchange.\nT turns the train for 2 pressure and 10s.\nTab swaps neighbors for 1 pressure and 6s.\nEscape early with Q once your debt is paid."
@@ -193,6 +211,9 @@ func button(text: String, action: Callable) -> void:
 
 func show_title(record: int, voyage_record := 0) -> void:
 	reset_guide()
+	guide_panel.hide()
+	title_shade.show()
+	menu_shade.color.a = 0.12
 	subtitle.add_theme_font_size_override("font_size", 17)
 	mode = "title"
 	best = record
@@ -205,7 +226,21 @@ func show_title(record: int, voyage_record := 0) -> void:
 	button("BOARD A NEW NIGHT   →", func(): play_requested.emit(false))
 	button("DAILY TICKET   /   SAME TRAIN FOR EVERYONE", func(): play_requested.emit(true))
 	button("THE LONG WAY HOME   /   ENDLESS SERVICES", func(): endless_requested.emit())
-	button("SETTINGS & CONTROLS", show_settings)
+	button("HOW TO PLAY   /   PORTER'S FIELD GUIDE", show_guide)
+	button("SETTINGS", show_settings)
+	button("QUIT", func(): exit_requested.emit())
+	menu_buttons.position.y = 423
+	menu_buttons.add_theme_constant_override("separation", 7)
+	for item in menu_buttons.get_children():
+		item.custom_minimum_size.y = 38
+		item.add_theme_font_size_override("font_size", 15)
+
+func show_guide() -> void:
+	reset_guide()
+	clear_buttons()
+	heading.text = "A PORTER'S\nFIELD GUIDE"
+	subtitle.text = "WASD walk · Mouse look · Shift run · Ctrl sneak\nE collect / bank · F fold home · X drop selected\n1–5 select a slot · L toggle lantern\nTab route / switchboard · Escape pause\n\nThe clock starts when you board. You can pause at any time to read the route, settings or field guide."
+	button("BACK TO THE PLATFORM   →", func(): show_title(best, best_long))
 
 func show_pause() -> void:
 	reset_guide()
@@ -256,6 +291,7 @@ func show_settings() -> void:
 	settings_box.add_child(back)
 
 func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage_record := 0) -> void:
+	reset_guide()
 	subtitle.add_theme_font_override("font", body_font)
 	subtitle.add_theme_font_size_override("font_size", 17)
 	menu_shade.color.a = 0.65 if run.won else 0.91
@@ -367,6 +403,10 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 
 func reset_guide() -> void:
 	if is_instance_valid(guide_body):
+		guide_panel.show()
+		title_shade.hide()
+		menu_buttons.position.y = 465
+		menu_buttons.add_theme_constant_override("separation", 10)
 		subtitle.add_theme_font_override("font", body_font)
 		guide_body.text = guide_text
 		guide_body.add_theme_font_size_override("font_size", 14)
