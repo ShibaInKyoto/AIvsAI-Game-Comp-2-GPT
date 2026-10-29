@@ -677,7 +677,6 @@ func capture_frame() -> void:
 		finish_run()
 	if "--capture-route" in OS.get_cmdline_user_args():
 		paused = true
-		refresh_route()
 	if "--capture-title" in OS.get_cmdline_user_args():
 		to_title()
 	if "--capture-settings" in OS.get_cmdline_user_args() or "--capture-credits" in OS.get_cmdline_user_args():
@@ -724,6 +723,8 @@ func capture_frame() -> void:
 			run.take(kind, 20 + kind * 10, 700 + kind)
 		if held_capture >= 0:
 			run.selected = held_capture
+	if "--capture-route" in OS.get_cmdline_user_args():
+		refresh_route()
 	for frame in range(40):
 		await get_tree().process_frame
 	print("RENDER: %d draw calls / %d visible objects" % [Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)])
@@ -870,7 +871,7 @@ func smoke_test() -> void:
 	verify(interface.mode == "result", "Result UI failed")
 	verify(interface.guide_panel.visible and not interface.title_shade.visible, "Result epilogue must replace title presentation")
 	refresh_route()
-	verify(interface.mode == "route" and "relics" in interface.subtitle.text, "Route ledger failed")
+	verify(interface.mode == "route" and interface.route_rows.get_child_count() == MidnightTrain.COUNT, "Route ledger failed")
 	interface.show_settings()
 	verify(interface.settings_box.visible, "Settings UI failed")
 	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, quiet evasion, fold, conductor capture, results, focused route/settings UI")

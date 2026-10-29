@@ -8,7 +8,7 @@ You owe the conductor £600. Explore seven art-deco carriages, decide which reli
 
 ![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
-[Passing villages beyond the carriage windows](docs/screenshots/window-view.png).
+[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png).
 
 ## Playing
 

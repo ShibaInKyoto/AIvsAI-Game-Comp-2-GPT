@@ -136,3 +136,7 @@ An original modeled leather satchel, gloved hand and uniform sleeve now frame th
 All four selected relics were inspected in the carriage renderer. The representative garden view adds nine draw calls (130 versus 121 before the satchel); this is not a hardware frame-rate measurement. The full state, profile, geometry, three-seed scene and walking-route suites passed. Fresh Linux standalone smoke passed, and the fresh Windows export rendered the satchel and aurora through Wine without errors. Native Windows CI remains required for this revision. scripts/model_satchel.py regenerates the new asset using the shared Blender helpers.
 
 Counter-interaction revision c37bb26 passed native Windows CI (run 40861278968). No final release has been declared.
+
+## Switchboard readability
+
+The route ledger now gives each carriage a separate row, highlights the porter's current room and uses 48×34 arrow targets in place of 36×20 controls. Disabled, focused and pressed states use the game's palette. The ledger explicitly explains that planning pauses the clock while swapping still spends six seconds. Counter and read-only views were inspected, including the minimum 960×540 window. Scene smoke passed, including focused Tab input and an actual button-triggered swap with its exact time/pressure charge. The capture helper now refreshes the ledger after its requested camera position, so the screenshot's YOU marker corresponds to that room.

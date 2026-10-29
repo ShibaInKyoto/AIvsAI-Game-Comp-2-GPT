@@ -46,6 +46,7 @@ var menu_buttons: VBoxContainer
 var settings_box: VBoxContainer
 var mode := "title"
 var route_buttons: Control
+var route_rows: Control
 var best := 0
 var best_long := 0
 
@@ -133,6 +134,9 @@ func _ready() -> void:
 	guide_body = label(rules, Vector2(28, 70), guide, 14)
 	guide_body.size = Vector2(354, 430)
 	guide_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	route_rows = Control.new()
+	route_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(route_rows)
 	route_buttons = Control.new()
 	menu.add_child(route_buttons)
 	settings_box = VBoxContainer.new()
@@ -182,6 +186,10 @@ func bar(parent: Node, pos: Vector2, dimensions: Vector2, color: Color) -> Meter
 	return item
 
 func clear_buttons() -> void:
+	if is_instance_valid(route_rows):
+		for child in route_rows.get_children():
+			route_rows.remove_child(child)
+			child.queue_free()
 	if is_instance_valid(route_buttons):
 		for child in route_buttons.get_children():
 			route_buttons.remove_child(child)
@@ -390,14 +398,22 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 	heading.text = "THE TRAIN\nREMEMBERS"
 	subtitle.add_theme_font_override("font", preload("res://assets/fonts/mono.ttf"))
 	subtitle.add_theme_font_size_override("font_size", 15)
-	var lines := "PRESSURE %d/6  /  SWAP 1 + 6s  /  %d:%02d\n\n" % [run.pressure, int(ceil(run.remaining)) / 60, int(ceil(run.remaining)) % 60]
+	subtitle.text = "PRESSURE %d/6  /  SWAP 1 + 6s  /  %d:%02d\nPlanning pauses the clock. Swapping still costs six seconds." % [run.pressure, int(ceil(run.remaining)) / 60, int(ceil(run.remaining)) % 60]
 	for slot in range(MidnightTrain.COUNT):
 		var remaining := 0
 		for cargo in freight:
 			if not cargo.taken and clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 0, 6) == slot:
 				remaining += 1
-		lines += "%02d   %-23s   %s%s\n" % [slot, train.car_name(slot).trim_prefix("THE "), "SANCTUARY" if slot == 0 else str(remaining) + " relics", " [YOU]" if slot == porter_slot else ""]
-	subtitle.text = lines
+		var row_y := 316 + slot * 40
+		var here := slot == porter_slot
+		var row := rect(route_rows, Vector2(94, row_y), Vector2(610, 38), Color("17373e") if here else Color("0d1e29"))
+		if here:
+			rect(row, Vector2.ZERO, Vector2(3, 38), gold)
+		label(row, Vector2(12, 8), "%02d" % slot, 16).modulate = gold
+		label(row, Vector2(53, 8), train.car_name(slot).trim_prefix("THE "), 16)
+		label(row, Vector2(342, 10), "SANCTUARY" if slot == 0 else str(remaining) + " relics", 12).modulate = Color("9fcac2")
+		if here:
+			label(row, Vector2(438, 10), "YOU", 12).modulate = gold
 	guide_heading.text = "RESONANCE COUPLINGS"
 	guide_body.add_theme_font_size_override("font_size", 15)
 	guide_body.text = "Some rooms remember each other. Place these carriages next to one another to awaken a resonance.\n\nOBSERVATORY + WINTER GARDEN\n%s\nBanking bottled aurora also grants 12 seconds per bottle.\n\nARCHIVE + CHOIR\n%s\nBells are muffled while you are inside either of these carriages.\n\nDINING ROOM + LAST CARRIAGE\n%s\nPassenger commissions offer 25%% larger sealed fares.\n\n%s" % ["AWAKE" if train.paired(1, 2) else "DORMANT", "AWAKE" if train.paired(4, 5) else "DORMANT", "AWAKE" if train.paired(3, 6) else "DORMANT", "Pressure: +1 for each £150 banked.\nT uses 2; each arrow uses 1." if can_shunt else "Return to the brass counter to operate the switchboard."]
@@ -409,10 +425,10 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 					continue
 				var item := Button.new()
 				item.text = "↑" if direction < 0 else "↓"
-				item.position = Vector2(525 if direction < 0 else 567, 308 + slot * 20)
-				item.size = Vector2(36, 20)
+				item.position = Vector2(584 if direction < 0 else 640, 318 + slot * 40)
+				item.size = Vector2(48, 34)
 				item.disabled = run.remaining <= 11 or run.pressure < 1
-				item.tooltip_text = "Move carriage toward the exchange (6s)" if direction < 0 else "Move carriage away from the exchange (6s)"
+				item.tooltip_text = "Move carriage %s the exchange (1 pressure + 6s)" % ("toward" if direction < 0 else "away from")
 				var normal := StyleBoxFlat.new()
 				normal.bg_color = Color("15333d")
 				normal.border_color = gold
@@ -421,13 +437,22 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 				var hover := normal.duplicate() as StyleBoxFlat
 				hover.bg_color = Color("285360")
 				item.add_theme_stylebox_override("hover", hover)
+				item.add_theme_stylebox_override("focus", hover)
+				item.add_theme_stylebox_override("pressed", hover)
+				var disabled := normal.duplicate() as StyleBoxFlat
+				disabled.bg_color = Color("101e27")
+				disabled.border_color = Color("3b4c50")
+				item.add_theme_stylebox_override("disabled", disabled)
+				item.add_theme_color_override("font_color", pale)
+				item.add_theme_color_override("font_disabled_color", Color("63777d"))
 				item.add_theme_font_override("font", body_font)
-				item.add_theme_font_size_override("font_size", 13)
+				item.add_theme_font_size_override("font_size", 21)
 				var chosen := slot
 				var target := neighbor
 				item.pressed.connect(func(): shunt_requested.emit(chosen, target))
 				route_buttons.add_child(item)
 	button("RETURN TO THE NIGHT   /   TAB OR ESC   →", func(): resume_requested.emit())
+	menu_buttons.position.y = 626
 
 func reset_guide() -> void:
 	if is_instance_valid(guide_body):
