@@ -627,6 +627,11 @@ func capture_frame() -> void:
 		if argument.begins_with("--capture-car="):
 			var identity := clampi(argument.get_slice("=", 1).to_int(), 1, 6)
 			player.position = Vector3(0, 0.05, -train.car_order.find(identity) * MidnightTrain.LENGTH + 7)
+		elif argument.begins_with("--capture-relic="):
+			var cargo := freight[clampi(argument.get_slice("=", 1).to_int(), 0, 3)]
+			player.position = cargo.position + Vector3(0, -1.35, 1.4)
+			camera.rotation.x = -0.15
+			grace = 999
 	if "--capture-portrait" in OS.get_cmdline_user_args():
 		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
@@ -637,7 +642,10 @@ func capture_frame() -> void:
 	for frame in range(40):
 		await get_tree().process_frame
 	print("RENDER: %d draw calls / %d visible objects" % [Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)])
-	get_viewport().get_texture().get_image().save_png("/tmp/midnight.png")
+	var capture_path := OS.get_environment("MIDNIGHT_CAPTURE_PATH")
+	if capture_path.is_empty():
+		capture_path = "/tmp/midnight.png"
+	verify(get_viewport().get_texture().get_image().save_png(capture_path) == OK, "Screenshot could not be saved")
 	await shutdown()
 
 func verify(condition: bool, message: String) -> void:

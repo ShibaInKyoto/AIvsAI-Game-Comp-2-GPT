@@ -4,6 +4,8 @@ extends Node3D
 
 const TYPES := ["Stolen hour", "Choir bell", "Folded doorway", "Bottled aurora"]
 const COLORS := [Color("84d4d0"), Color("edb568"), Color("c4a3ed"), Color("a3d7a0")]
+const MODELS := [preload("res://assets/models/relic_hour.glb"), preload("res://assets/models/relic_bell.glb"), preload("res://assets/models/relic_door.glb"), preload("res://assets/models/relic_aurora.glb")]
+static var light_materials: Dictionary = {}
 var kind := 0
 var value := 0
 var serial := 0
@@ -18,59 +20,25 @@ func configure(type: int, price: int, identity: int) -> void:
 	phase = float(identity) * 1.73
 
 func _ready() -> void:
-	visual = Node3D.new()
+	visual = MODELS[kind].instantiate()
 	add_child(visual)
-	var frame := StandardMaterial3D.new()
-	frame.albedo_color = Color("b99b65")
-	frame.metallic = 0.75
-	var glow := StandardMaterial3D.new()
-	glow.albedo_color = COLORS[kind]
-	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	glow.emission_enabled = true
-	glow.emission = COLORS[kind]
-	glow.emission_energy_multiplier = 0.65
-	var core := MeshInstance3D.new()
-	if kind == 0:
-		var sphere := SphereMesh.new()
-		sphere.radius = 0.22
-		sphere.height = 0.44
-		core.mesh = sphere
-	elif kind == 1:
-		var bell := CylinderMesh.new()
-		bell.top_radius = 0.1
-		bell.bottom_radius = 0.3
-		bell.height = 0.42
-		core.mesh = bell
-	elif kind == 2:
-		var prism := PrismMesh.new()
-		prism.size = Vector3(0.42, 0.55, 0.16)
-		core.mesh = prism
-	else:
-		var capsule := CapsuleMesh.new()
-		capsule.radius = 0.15
-		capsule.height = 0.5
-		core.mesh = capsule
-	core.material_override = glow
-	visual.add_child(core)
-	for height in [-0.34, 0.34]:
-		var rim := MeshInstance3D.new()
-		var ring := CylinderMesh.new()
-		ring.top_radius = 0.34
-		ring.bottom_radius = 0.34
-		ring.height = 0.06
-		rim.mesh = ring
-		rim.position.y = height
-		rim.material_override = frame
-		visual.add_child(rim)
-	for x in [-0.29, 0.29]:
-		for z in [-0.29, 0.29]:
-			var post := MeshInstance3D.new()
-			var rod := BoxMesh.new()
-			rod.size = Vector3(0.035, 0.7, 0.035)
-			post.mesh = rod
-			post.position = Vector3(x, 0, z)
-			post.material_override = frame
-			visual.add_child(post)
+	style_relic(visual)
+
+func style_relic(node: Node) -> void:
+	if node is MeshInstance3D:
+		for index in range(node.mesh.get_surface_count()):
+			var surface := node.mesh.surface_get_material(index) as StandardMaterial3D
+			if surface == null or not surface.emission_enabled:
+				continue
+			if not light_materials.has(kind):
+				var light := ShaderMaterial.new()
+				light.shader = preload("res://game/relic_light.gdshader")
+				light.set_shader_parameter("tint", COLORS[kind])
+				light.set_shader_parameter("relic_kind", kind)
+				light_materials[kind] = light
+			node.set_surface_override_material(index, light_materials[kind])
+	for child in node.get_children():
+		style_relic(child)
 
 func _process(delta: float) -> void:
 	phase += delta
@@ -81,4 +49,4 @@ func title() -> String:
 	return TYPES[kind]
 
 func effect() -> String:
-	return ["Bank: +18 seconds", "Loud: attracts the conductor • +25% trip bonus", "F: consume to fold home, keeping other freight", "Bank: restores composure"][kind]
+	return ["Bank: +18 seconds", "Loud: attracts the conductor • +25% trip bonus", "F: consume to fold home, keeping other freight", "Carried: muffles bells • Bank: restores composure"][kind]

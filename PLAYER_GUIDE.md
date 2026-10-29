@@ -48,6 +48,8 @@ Bank an early delivery for a free upgrade. A bell is worth more when the rest of
 Windows: `%APPDATA%/Godot/app_userdata/The Midnight Exchange/porter.json`.
 Only settings and the personal best are stored. Deleting this file resets them. There is no telemetry.
 
+The game uses Godot Engine and DejaVu fonts. Their license notices are included beside the executable. Game models, textures, icons and audio were created for The Midnight Exchange; generation scripts are included in the source repository.
+
 ## The Long Way Home
 
 For a longer challenge, choose **The Long Way Home** from the title screen. Each successful service lets you board another night. Each service gives you less starting time (down to 150 seconds) and a quicker conductor; your voyage score adds up across services. Satchel, upgrades and freight start fresh on each train. Your best voyage total is saved separately.

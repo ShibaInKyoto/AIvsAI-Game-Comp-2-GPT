@@ -34,8 +34,10 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 - `game/freight.gd`, `passenger.gd`, `conductor.gd`: relics, commissions and threat behavior.
 - `game/dawn.gd`: the real-time station epilogue.
 - `game/interface.gd`, `sound.gd`: scalable UI and original soundscape.
-- `assets/`: original generated textures/audio and licensed DejaVu fonts.
+- `assets/`: original modeled props/relics, generated textures/audio, DejaVu fonts and engine notices.
 - `tests/`: simulation invariants; integration tests also exercise the running scene.
 - `scripts/`: reproducible asset generation (including optional Blender 4.3 modeling), verified tool installation, validation.
 
 Pushes build downloadable native artifacts. Version tags run both Linux and native Windows tests before GitHub Actions publishes a release. See [design and progress](docs/DESIGN.md).
+
+Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py` and `blender --background --python scripts/model_relics.py`. Both generators share `scripts/modeling.py`. Blender is not needed to build or play the game.

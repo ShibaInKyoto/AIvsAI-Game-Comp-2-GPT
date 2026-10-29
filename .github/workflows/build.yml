@@ -38,6 +38,8 @@ jobs:
           cp PLAYER_GUIDE.md build/linux/READ_ME.md
           cp -r assets/fonts/LICENSE.txt build/windows/FONT_LICENSE.txt
           cp -r assets/fonts/LICENSE.txt build/linux/FONT_LICENSE.txt
+          cp assets/licenses/*.txt build/windows/
+          cp assets/licenses/*.txt build/linux/
           cd build/windows && zip -9 ../TheMidnightExchange-Windows.zip *
           cd ../linux && zip -9 ../TheMidnightExchange-Linux.zip *
           cd .. && sha256sum *.zip > SHA256SUMS.txt
