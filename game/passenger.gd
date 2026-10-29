@@ -17,6 +17,12 @@ const THANKS := [
 	"I shall sing softly. He will not hear me over the wheels.",
 	"I can see the kitchen light. She has left it on. Thank you."
 ]
+const MEMORIES := [
+	"At dawn the astronomer fills the bottle with seawater. It no longer glows. She spends a long time holding it against the sky, pleased that the two blues are different.\n\nThere is a house above the harbor where she once drew constellations on the ceiling for a child who could not sleep. She buys a brush before she buys breakfast.\n\nThat evening she paints over the stars, one at a time. Then she opens the curtains. The child, grown now, stands in the doorway and tells her which ones she missed.",
+	"The archivist uses the hour before the station clock strikes six. He writes June's name on the envelope and again at the top of the page.\n\nThe letter contains no explanation of the train. It asks whether the plum tree survived the winter. It says he remembers the green cup with the broken handle. It says he is sorry he took so long.\n\nAt the address, someone has painted the door blue. He raises his hand to knock. From inside, a woman calls his name before his knuckles reach the wood.",
+	"The soloist discovers that the bell makes no sound on the platform. She puts it in her pocket anyway.\n\nIn a small cafe, a radio is playing the tune she spent the journey trying to remember. This time she hears the mistake in its third bar. She laughs, borrows a pencil and writes the missing note on a napkin.\n\nBy evening there are six people around the cafe piano. None of them knows the song. She teaches it to them slowly, leaving room for their mistakes. Under her coat, the little bell rings once.",
+	"The last passenger checks the kitchen light twice. It is still on.\n\nHe finds a child asleep at the table beside two cold plates. On one, someone has made a little train out of peas. He sits down very carefully, so the chair will not wake her.\n\nIn the morning she asks where he went. He says he got on the wrong service. She accepts this, then tells him the peas were meant to be a bridge.\n\nHe keeps the folded doorway in a drawer. When he opens it later, there is only a small mirror inside."
+]
 var identity := 0
 var completed := false
 var figure: Node3D

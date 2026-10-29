@@ -6,7 +6,7 @@ A native Windows 10/11 game built in Godot 4.6.3: first-person magical freight s
 
 Explore seven carriages, pack three relics and bank £600 to buy freedom. The first two deliveries grant a free choice of more capacity, quicker movement or quieter lining. A stolen hour adds eighteen seconds when banked. Each bell increases all carried freight by 25% but makes the porter easier to hear. A folded doorway sacrifices its own value to return the remaining cargo home. Aurora muffles the porter and restores composure when banked.
 
-Four passenger commissions consume particular relics for sealed fares. These occupy no satchel slots and survive capture, but must still be banked. Bell bonuses apply to carried freight; sealed fares retain their quoted value. Helped travelers appear at the dawn platform. The paused route ledger shows requests, current carriage locations, completed thanks and pending fares.
+Four passenger commissions consume particular relics for sealed fares. These occupy no satchel slots and survive capture, but must still be banked. Bell bonuses apply to carried freight; sealed fares retain their quoted value. Helped travelers appear at the dawn platform. Winning after helping them unlocks four original first-morning epilogues, kept in the porter's notebook across tickets. This adds a story goal without changing run difficulty. The paused route ledger shows requests, current carriage locations, completed thanks and pending fares.
 
 The conductor patrols the central aisle and responds to noise. Quiet side refuges let him pass. Capture restores carried freight to its moving displays and costs fifteen seconds, preserving savings, upgrades and sealed fares. The choir’s brass organ stop can call him toward its carriage for eighteen seconds, once per service. Nearby noise overrides that diversion; its destination follows the moving organ and respects the sanctuary boundary.
 
@@ -43,7 +43,7 @@ There are no runtime network services or package dependencies. Asset-generation 
 `scripts/validate.sh` checks process exit status and engine/script errors, then runs:
 
 - 103,035 state checks, including 25,000 randomized actions and 1,000 deterministic train orders.
-- Profile recovery/replacement, mixed indexed geometry, fifty sound checks and ten conductor checks.
+- Profile recovery/replacement, legacy-profile migration and remembered-traveler rules, mixed indexed geometry, fifty sound checks and ten conductor checks.
 - Three scene seeds exercising actual interactions, focused Tab input, floor/window collision, quiet evasion, bell dropping, the moving organ diversion, capture and UI transitions.
 - A 228m walking/economy soak with twelve physical pickups, two rotations, £655 extraction, dawn and a harder service restart. This harness isolates the conductor; the scene encounter tests exercise live threat.
 

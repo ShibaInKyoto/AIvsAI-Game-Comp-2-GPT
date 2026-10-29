@@ -51,6 +51,7 @@ var route_rows: Control
 var route_commissions := false
 var best := 0
 var best_long := 0
+var remembered := 0
 
 func _ready() -> void:
 	root = Control.new()
@@ -240,11 +241,11 @@ func show_title(record: int, voyage_record := 0) -> void:
 	hud.hide()
 	clear_buttons()
 	heading.text = "THE MIDNIGHT\nEXCHANGE"
-	subtitle.text = "The last train carries things the world forgot.\nYou owe the conductor £600. Dawn is four and a half minutes away. Bring back something worth your freedom.\n\nBest exchange: £%d  /  Best voyage: £%d" % [best, best_long]
+	subtitle.text = "The last train carries things the world forgot.\nYou owe the conductor £600. Dawn is four and a half minutes away. Bring back something worth your freedom.\n\nBest exchange: £%d  /  Best voyage: £%d\nTravelers remembered: %d / 4" % [best, best_long, memory_count()]
 	button("BOARD A NEW NIGHT   →", func(): play_requested.emit(false))
 	button("DAILY TICKET   /   SAME TRAIN FOR EVERYONE", func(): play_requested.emit(true))
 	button("THE LONG WAY HOME   /   ENDLESS SERVICES", func(): endless_requested.emit())
-	button("HOW TO PLAY   /   PORTER'S FIELD GUIDE", show_guide)
+	button("PORTER'S NOTEBOOK   /   GUIDE & MEMORIES", show_guide)
 	button("SETTINGS", show_settings)
 	button("QUIT", func(): exit_requested.emit())
 	menu_buttons.position.y = 423
@@ -259,6 +260,50 @@ func show_guide() -> void:
 	heading.text = "A PORTER'S\nFIELD GUIDE"
 	subtitle.text = "WASD walk · Mouse look · Shift run · Ctrl sneak\nE collect / bank · F fold home · X drop selected\n1–5 select a slot · L toggle lantern\nTab route / switchboard · Escape pause\n\nThe clock starts when you board. You can pause at any time to read the route, settings or field guide."
 	button("BACK TO THE PLATFORM   →", func(): show_title(best, best_long))
+	var notebook := button("TRAVELERS REMEMBERED  %d/4   →" % memory_count(), func(): show_memories(-1), route_buttons)
+	notebook.position = Vector2(780, 626)
+	notebook.custom_minimum_size = Vector2(410, 44)
+	notebook.size = Vector2(410, 44)
+
+func memory_count() -> int:
+	var count := 0
+	for identity in range(MidnightPassenger.NAMES.size()):
+		if (remembered & (1 << identity)) != 0:
+			count += 1
+	return count
+
+func show_memories(selected: int = -1) -> void:
+	if selected < 0:
+		selected = 0
+		for identity in range(MidnightPassenger.NAMES.size()):
+			if (remembered & (1 << identity)) != 0:
+				selected = identity
+				break
+	selected = clampi(selected, 0, MidnightPassenger.NAMES.size() - 1)
+	reset_guide()
+	clear_buttons()
+	heading.text = "THE PEOPLE\nWE REMEMBER"
+	subtitle.text = "Win a night after helping a traveler to remember their first morning. These memories stay in your notebook across tickets.\n\n%d / 4 travelers remembered.\nYou can help someone different on each journey." % memory_count()
+	subtitle.add_theme_font_size_override("font_size", 17)
+	guide_heading.text = MidnightPassenger.NAMES[selected]
+	guide_body.add_theme_font_size_override("font_size", 16)
+	var unlocked := (remembered & (1 << selected)) != 0
+	if unlocked:
+		guide_body.text = "REMEMBERED AT DAWN\n\n" + MidnightPassenger.MEMORIES[selected]
+	else:
+		guide_body.text = "STILL ABOARD THE TRAIN\n\n“%s”\n\nREQUESTED: %s\n\nHelp this traveler, bank £600 and reach dawn. Their first morning will be recorded here.\n\nThe paused route ledger shows their current carriage and offer." % [MidnightPassenger.REQUESTS[selected], MidnightFreight.TYPES[MidnightPassenger.NEEDS[selected]]]
+	for identity in range(MidnightPassenger.NAMES.size()):
+		var known := (remembered & (1 << identity)) != 0
+		var chosen := identity
+		var entry := button("%s%s   /   %s" % ["› " if identity == selected else "", MidnightPassenger.NAMES[identity].trim_prefix("THE "), "REMEMBERED" if known else "STILL ABOARD"], func(): show_memories(chosen))
+		if identity == selected:
+			entry.modulate = Color("b7d8ce")
+	button("BACK TO THE FIELD GUIDE   →", show_guide)
+	menu_buttons.position.y = 423
+	menu_buttons.add_theme_constant_override("separation", 7)
+	for entry in menu_buttons.get_children():
+		entry.custom_minimum_size.y = 38
+		entry.add_theme_font_size_override("font_size", 15)
 
 func show_pause() -> void:
 	reset_guide()
@@ -338,6 +383,8 @@ func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage
 	clear_buttons()
 	heading.text = "A DEBT PAID.\nA DAWN EARNED." if run.won else "SOME DEBTS\nOUTLIVE THE NIGHT."
 	subtitle.text = "£%d exchanged  /  £%d required\n%d deliveries · %d folds · %d encounters · %d helped\nBest exchange: £%d\n\n%s\nTicket %d" % [run.banked, MidnightRun.TARGET, run.deliveries, run.folds, run.recovered, run.commissions.size(), record, "You step off the train with your name intact." if run.won else "Each ticket starts fresh. Try another route, or pack differently.", run.seed_value]
+	if run.won and not run.commissions.is_empty():
+		subtitle.text += "\nTheir mornings await in the porter's notebook."
 	if service > 0:
 		subtitle.add_theme_font_size_override("font_size", 15)
 		subtitle.text += "\nService %d • Voyage £%d • Best £%d" % [service, total, voyage_record]

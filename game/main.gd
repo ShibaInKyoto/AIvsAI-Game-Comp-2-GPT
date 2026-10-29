@@ -36,6 +36,7 @@ var motion := 0.35
 var volume := 0.65
 var best := 0
 var best_voyage := 0
+var rescued_mask := 0
 var last_ticket := 0
 var qa_seed := 90210
 var smoke := false
@@ -85,6 +86,7 @@ func _ready() -> void:
 	interface.set_meta("sensitivity", sensitivity)
 	interface.set_meta("volume", volume)
 	interface.set_meta("motion", motion)
+	interface.remembered = rescued_mask
 	interface.show_title(best, best_voyage)
 	build_title_world()
 	if "--soak-test" in OS.get_cmdline_user_args():
@@ -250,6 +252,14 @@ func _input(event: InputEvent) -> void:
 			resume()
 		else:
 			pause()
+		get_viewport().set_input_as_handled()
+	elif event.keycode == KEY_ESCAPE and not playing:
+		if interface.mode == "result":
+			to_title()
+		elif interface.mode == "title":
+			interface.show_title(best, best_voyage)
+		else:
+			return
 		get_viewport().set_input_as_handled()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -513,6 +523,8 @@ func finish_run() -> void:
 	if not playing:
 		return
 	run.finish()
+	rescued_mask = MidnightProfile.remember_travelers(rescued_mask, run.won, run.commissions)
+	interface.remembered = rescued_mask
 	playing = false
 	paused = false
 	best = maxi(best, run.banked)
@@ -692,6 +704,7 @@ func load_settings() -> void:
 	var data := MidnightProfile.read_file(SAVE_PATH)
 	best = data.best
 	best_voyage = data.best_voyage
+	rescued_mask = data.rescued_mask
 	sensitivity = data.sensitivity
 	motion = data.motion
 	volume = data.volume
@@ -700,7 +713,7 @@ func load_settings() -> void:
 func save_settings() -> void:
 	if smoke or capture:
 		return
-	if not MidnightProfile.write_file(SAVE_PATH, {"best": best, "best_voyage": best_voyage, "sensitivity": sensitivity, "motion": motion, "volume": volume}):
+	if not MidnightProfile.write_file(SAVE_PATH, {"best": best, "best_voyage": best_voyage, "rescued_mask": rescued_mask, "sensitivity": sensitivity, "motion": motion, "volume": volume}):
 		push_warning("The local profile could not be saved. This journey can continue.")
 
 func capture_frame() -> void:
@@ -741,6 +754,9 @@ func capture_frame() -> void:
 			grace = 999
 		elif argument.begins_with("--capture-held="):
 			held_capture = clampi(argument.get_slice("=", 1).to_int(), 0, 3)
+		elif argument.begins_with("--capture-memory="):
+			to_title()
+			interface.show_memories(clampi(argument.get_slice("=", 1).to_int(), 0, 3))
 	if "--capture-portrait" in OS.get_cmdline_user_args():
 		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
@@ -788,8 +804,8 @@ func verify(condition: bool, message: String) -> void:
 func smoke_test() -> void:
 	verify(world_root is MidnightTitle and camera.is_inside_tree(), "Title scene did not build")
 	var qa_profile := "user://qa_scene_%d.json" % OS.get_process_id()
-	verify(MidnightProfile.write_file(qa_profile, {"best": 600}), "Initial profile write failed")
-	verify(MidnightProfile.write_file(qa_profile, {"best": 800}) and MidnightProfile.read_file(qa_profile).best == 800, "Profile replacement failed")
+	verify(MidnightProfile.write_file(qa_profile, {"best": 600, "rescued_mask": 1}), "Initial profile write failed")
+	verify(MidnightProfile.write_file(qa_profile, {"best": 800, "rescued_mask": 5}) and MidnightProfile.read_file(qa_profile).best == 800 and MidnightProfile.read_file(qa_profile).rescued_mask == 5, "Profile replacement failed")
 	DirAccess.remove_absolute(qa_profile)
 	start_ticket(false, qa_seed)
 	verify(freight.size() == 18, "Freight generation failed")
@@ -919,6 +935,15 @@ func smoke_test() -> void:
 	verify(interface.mode == "route" and interface.route_rows.get_child_count() == MidnightTrain.COUNT, "Route ledger failed")
 	interface.show_settings()
 	verify(interface.settings_box.visible, "Settings UI failed")
+	interface.show_result(run, best)
+	test_key(KEY_ESCAPE, true)
+	test_key(KEY_ESCAPE, false)
+	verify(world_root is MidnightTitle and interface.mode == "title", "Escape from results must rebuild the title world")
+	interface.show_memories(0)
+	(interface.menu_buttons.get_child(0) as Button).grab_focus()
+	test_key(KEY_ESCAPE, true)
+	test_key(KEY_ESCAPE, false)
+	verify(not interface.guide_panel.visible and interface.mode == "title", "Escape must close the notebook with a focused button")
 	print("SMOKE %s:" % ("FAIL" if test_failed else "PASS") + " generation, collection, banking, upgrades, shunting/resonances, passenger trade, floor/window physics, quiet evasion, choir diversion, fold, conductor capture, results, focused route/settings UI")
 	await shutdown()
 

@@ -4,11 +4,13 @@ A native 3D game about impossible freight on the last train before dawn. Built i
 
 ![The midnight service crosses the viaduct](docs/screenshots/title.png)
 
-You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells multiply carried freight but attract attention. Stolen hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside. Shunt neighboring carriages to awaken resonance bonuses. Four passenger commissions trade your tools for sealed fares and a different dawn. An escalating endless-service mode tracks your whole voyage.
+You owe the conductor £600. Explore seven art-deco carriages, decide which relics fit in your satchel, and bring them back to the exchange. Bells multiply carried freight but attract attention. Stolen hours buy time. A folded doorway can save a long walk home. The timetable lever moves the last carriage to the front—along with whatever, or whoever, is inside. Shunt neighboring carriages to awaken resonance bonuses, or play the choir's organ to draw the conductor away.
+
+Four passenger commissions trade your tools for sealed fares and a different dawn. Win after helping them to keep their first-morning stories in the porter's notebook across later tickets. An escalating endless-service mode tracks your whole voyage.
 
 ![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
-[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png) · [The choir's one voice](docs/screenshots/choir.png).
+[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png) · [The choir's one voice](docs/screenshots/choir.png) · [The porter's notebook](docs/screenshots/notebook.png).
 
 ## Playing
 

@@ -2,7 +2,9 @@ class_name MidnightProfile
 extends RefCounted
 ## Small, versioned local profile. Invalid fields fall back independently.
 
-const DEFAULTS := {"version": 1, "best": 0, "best_voyage": 0, "sensitivity": 1.0, "motion": 0.35, "volume": 0.65}
+const DEFAULTS := {"version": 2, "best": 0, "best_voyage": 0, "rescued_mask": 0, "sensitivity": 1.0, "motion": 0.35, "volume": 0.65}
+const TRAVELERS := 4
+const ALL_TRAVELERS := (1 << TRAVELERS) - 1
 const LIMITS := {"best": Vector2(0, 2147483647), "best_voyage": Vector2(0, 2147483647), "sensitivity": Vector2(0.3, 2), "motion": Vector2(0, 1), "volume": Vector2(0, 1)}
 
 static func normalize(data: Variant) -> Dictionary:
@@ -14,7 +16,21 @@ static func normalize(data: Variant) -> Dictionary:
 		if (value is int or value is float) and is_finite(float(value)):
 			var bounded := clampf(float(value), LIMITS[key].x, LIMITS[key].y)
 			result[key] = int(bounded) if key in ["best", "best_voyage"] else bounded
+	var remembered: Variant = data.get("rescued_mask")
+	# JSON numbers may arrive as floats. Reject fractional/corrupt masks rather
+	# than accidentally awarding a different traveler's memory.
+	if (remembered is int or remembered is float) and is_finite(float(remembered)):
+		if remembered >= 0 and remembered <= ALL_TRAVELERS and float(remembered) == floorf(float(remembered)):
+			result.rescued_mask = int(remembered)
 	return result
+
+static func remember_travelers(mask: int, won: bool, commissions: Dictionary) -> int:
+	var remembered := mask if mask >= 0 and mask <= ALL_TRAVELERS else 0
+	if won:
+		for identity in commissions:
+			if identity is int and identity >= 0 and identity < TRAVELERS:
+				remembered |= 1 << identity
+	return remembered
 
 static func read_file(path: String) -> Dictionary:
 	var file := FileAccess.open(path, FileAccess.READ)

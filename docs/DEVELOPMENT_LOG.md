@@ -190,3 +190,13 @@ Single-step bevels keep the small trim and key highlights while reducing the mod
 The modeled draft passed the full validator. After bevel reduction, geometry, scene smoke and the walking route passed again. Fresh Linux standalone smoke and Windows-through-Wine smoke/rendering passed with the final model. Close and carriage-wide views were inspected. scripts/model_organ.py reproduces the asset. Current design documentation now lives in DESIGN.md, with historical checkpoint details retained here.
 
 Organ-interaction revision fc62989 passed native Windows CI (run 40932350113). This model revision still needs its own CI result. No final release has been declared.
+
+## The people remembered
+
+Winning after helping a traveler now records that person's first morning in the porter's notebook. Four original epilogues give separate tickets a persistent story goal without changing freight, difficulty or rewards. The notebook opens from the title's guide page, previews unmet requests, selects an already remembered traveler by default, and shows progress on the title. Escape closes title pages and returns results to a rebuilt title scene; the scene test checks this with a focused notebook button.
+
+Profile version two adds a four-bit record of remembered travelers. Older scores/settings remain intact, losses keep old memories without granting new ones, and repeated wins merge the record. Fractional, nonfinite and out-of-range memory data is rejected. Thirty-six profile checks cover migration, outcomes, corrupt fields, serialization and replacement. The exported scene smoke also replaces an isolated profile containing these records.
+
+The full validator passed. A presentation fixture used the real winning-run hook to unlock all four, navigated through the actual notebook buttons and returned to a title showing 4/4; it did not write the user's save. Locked and all four unlocked pages were inspected. Fresh Linux standalone and Windows-through-Wine smoke passed, including the focused Escape checks. The Windows export rendered the notebook, four-traveler result and fresh title without errors. The public notebook screenshot shows the locked page to preserve the epilogues' discovery.
+
+Modeled-organ revision 9ab557b passed native Windows CI (run 40935138870). This notebook revision still needs its own CI result. No human playtest or final release has been declared.

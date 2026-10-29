@@ -52,7 +52,7 @@ Bank an early delivery for a free upgrade. A bell is worth more when the rest of
 ## Local data
 
 Windows: `%APPDATA%/Godot/app_userdata/The Midnight Exchange/porter.json`.
-Only settings and the personal best are stored. Deleting this file resets them. There is no telemetry.
+Settings, personal bests and remembered travelers are stored here. Deleting this file resets them. There is no telemetry.
 
 The game uses Godot Engine and DejaVu fonts. Their license notices are included beside the executable. Game models, textures, icons and audio were created for The Midnight Exchange; generation scripts are included in the source repository.
 
@@ -67,6 +67,10 @@ Press Tab to open the route ledger. It shows the current order of the carriages 
 Four travelers have unfinished business. Speak with E when facing one nearby. Each needs a particular kind of relic and offers a sealed fare in exchange. Accepting a commission consumes that relic; the fare does not occupy a satchel slot and survives a conductor encounter. Return to the exchange to bank it. Each passenger can be helped once per run. They travel with their carriage when you turn the timetable.
 
 Press Tab and choose **Passenger commissions** to review requests, current carriage numbers, offers and the travelers you have helped. The ledger also shows the sealed fares still waiting to be banked. Its **Resonance couplings** button returns to the pairing bonuses.
+
+## The notebook
+
+From the title, choose **Porter's notebook**, then **Travelers remembered**. Helping a traveler and winning that night unlocks a short epilogue about their first morning. These memories stay across tickets; remember different travelers on separate journeys. Escape closes notebook and other title pages, and returns from results to the platform menu.
 
 ## The switchboard and resonances
 
