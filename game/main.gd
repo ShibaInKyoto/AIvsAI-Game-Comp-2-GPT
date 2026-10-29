@@ -351,7 +351,7 @@ func nearest_passenger() -> MidnightPassenger:
 
 func interact() -> void:
 	var cargo := nearest_freight()
-	if at_counter() and cargo == null:
+	if at_counter() and (cargo == null or run.inventory.size() >= run.capacity):
 		var aurora_time := run.count_kind(3) * 12 if train.paired(1, 2) else 0
 		var earned := run.bank()
 		if earned > 0:
@@ -447,6 +447,7 @@ func fold_home() -> void:
 		player.position = Vector3(0, 0.05, 3.6)
 		player.velocity = Vector3.ZERO
 		grace = 8
+		threat = 0
 		sound.play("fold")
 		interface.flash(Color("ac8bd1"), 0.32)
 		notify("Space folds like a ticket. The counter welcomes you back.")
@@ -467,6 +468,7 @@ func caught() -> void:
 	player.position = Vector3(0, 0.05, 2.5)
 	player.velocity = Vector3.ZERO
 	grace = 12
+	threat = 0
 	conductor.position.z = -78
 	sound.play("caught")
 	interface.flash(Color("ad423a"), 0.32)
@@ -575,15 +577,17 @@ func _physics_process(delta: float) -> void:
 			notify(["", "The stars here shine inward. Someone has wound them too tightly.", "In the winter garden, everything grows toward yesterday.", "Every place is set. None of the chairs are warm.", "The ledger has your handwriting. The dates are all tomorrow.", "The bells have no clappers. They ring when you remember them.", "The last carriage smells like the home you have not found yet."][identity], 5)
 	var cargo := nearest_freight()
 	var passenger := nearest_passenger()
-	var focus := cargo if passenger == null else null
+	var at_exchange := at_counter()
+	var can_collect := run.inventory.size() < run.capacity
+	var focus := cargo if passenger == null and (not at_exchange or can_collect) else null
 	if focused_freight != focus:
 		if is_instance_valid(focused_freight):
 			focused_freight.set_focused(false)
 		focused_freight = focus
 	if focused_freight != null:
-		focused_freight.set_focused(true, run.inventory.size() < run.capacity)
-	var message := "Explore the train. The brass counter is in carriage 00."
-	if at_counter():
+		focused_freight.set_focused(true, can_collect)
+	var message := "Walk to the brass counter at the far end of this carriage. E banks freight." if car == 0 else "Explore the train. The brass counter is in carriage 00."
+	if at_exchange:
 		if run.upgrade_tokens > 0:
 			message = "FREE UPGRADE  /  1 larger satchel  ·  2 quicker stride  ·  3 quiet lining     |     E bank freight"
 		elif run.banked >= MidnightRun.TARGET:
@@ -594,21 +598,26 @@ func _physics_process(delta: float) -> void:
 		if cargo != null:
 			message = "E  %s  /  £%d  /  %s" % [cargo.title().to_upper(), cargo.value, cargo.effect()]
 		elif run.inventory.size() == run.capacity:
-			message = "SATCHEL FULL  /  Return to carriage 00. F folds home if you carry a doorway."
-	if at_counter() and cargo != null:
+			message = "SATCHEL FULL  /  Walk to the brass counter at the far end of this carriage." if car == 0 else "SATCHEL FULL  /  Return to carriage 00. F folds home if you carry a doorway."
+	if at_exchange and cargo != null and can_collect:
 		message = "E  %s  /  £%d  /  %s" % [cargo.title().to_upper(), cargo.value, cargo.effect()]
-	if passenger != null and not at_counter():
+	if passenger != null and not at_exchange:
 		message = "E  %s  /  %s for a £%d sealed fare" % [MidnightPassenger.NAMES[passenger.identity], MidnightFreight.TYPES[MidnightPassenger.NEEDS[passenger.identity]], passenger_fare(passenger.identity)]
 		if passenger.completed:
 			message = "E  %s  /  A traveler you helped. Speak to them again." % MidnightPassenger.NAMES[passenger.identity]
 	interface.update(run, car, energy, threat, message, sneaking)
 	if threat > 0.35:
-		if conductor.alert:
+		if grace > 0:
+			interface.threat_label.text = "HE IS DISTRACTED  /  Move while you can."
+		elif conductor.alert:
 			interface.threat_label.text = "HE HEARS YOU  /  Bells carry far. Run, fold home, or drop them and sneak aside."
 		elif sneaking and absf(player.position.x) > noise:
 			interface.threat_label.text = "KEEP QUIET  /  Let the red lantern pass."
 	if run.pending_fares > 0:
 		interface.manifest_label.text = "MANIFEST %d/%d   /   £%d SEALED FARES TO BANK   /   %d OF 4 PASSENGERS HELPED" % [run.inventory.size(), run.capacity, run.pending_fares, run.commissions.size()]
+	if at_exchange and run.upgrade_tokens > 0:
+		var fares := " / SEALED £%d" % run.pending_fares if run.pending_fares > 0 else ""
+		interface.manifest_label.text = "MANIFEST %d/%d%s   /   FREE UPGRADE ×%d:  1 SATCHEL · 2 STRIDE · 3 QUIET LINING" % [run.inventory.size(), run.capacity, fares, run.upgrade_tokens]
 	interface.room_label.text = "%02d / %s" % [car, train.car_name(car)]
 	interface.status_label.text += "   /   BOILER %d/6" % run.pressure
 	if service > 0:
@@ -674,8 +683,12 @@ func capture_frame() -> void:
 		player.position = Vector3(0, 0.1, -47)
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--capture-car="):
-			var identity := clampi(argument.get_slice("=", 1).to_int(), 1, 6)
-			player.position = Vector3(0, 0.05, -train.car_order.find(identity) * MidnightTrain.LENGTH + 7)
+			var identity := clampi(argument.get_slice("=", 1).to_int(), 0, 6)
+			if identity == 0:
+				player.position = Vector3(0, 0.05, -7)
+				player.rotation.y = PI
+			else:
+				player.position = Vector3(0, 0.05, -train.car_order.find(identity) * MidnightTrain.LENGTH + 7)
 		elif argument.begins_with("--capture-relic="):
 			var cargo := freight[clampi(argument.get_slice("=", 1).to_int(), 0, 3)]
 			player.position = cargo.position + Vector3(0, -1.35, 1.4)
@@ -826,6 +839,19 @@ func smoke_test() -> void:
 	interact()
 	verify(is_equal_approx(run.remaining, 112), "Observatory/garden time resonance failed")
 	verify(run.banked == value + first_fare + 10, "Fare and relic combined banking failed")
+	# Nearby floor loot must not trap a full satchel at the bank counter.
+	var floor_cargo := freight[2]
+	run.take(floor_cargo.kind, floor_cargo.value, floor_cargo.serial)
+	floor_cargo.taken = true
+	floor_cargo.hide()
+	drop_selected()
+	for index in range(run.capacity):
+		run.take(3, 1, 600 + index)
+	verify(nearest_freight() == floor_cargo, "Counter floor-loot fixture failed")
+	var expected_deposit := run.banked + run.held_value()
+	interact()
+	verify(run.inventory.is_empty() and run.banked == expected_deposit and not floor_cargo.taken, "Floor loot blocked banking a full satchel")
+	floor_cargo.position = floor_cargo.display_position
 	run.remaining = 0
 	await get_tree().physics_frame
 	await get_tree().physics_frame

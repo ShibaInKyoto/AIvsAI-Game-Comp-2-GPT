@@ -120,3 +120,11 @@ The conductor's light now attaches to the modeled body at the lantern's actual l
 ## Credits and menu consistency
 
 Settings now contains a credits/notices page with engine and font acknowledgments and the packaged license filenames. It preserves the originating title/pause mode, so returning and resuming work consistently. Settings navigation uses the same styled button helper as the main menu. Credits and settings layouts were rendered and inspected; scene smoke passed after the helper change.
+
+## Counter interaction clarity
+
+A full satchel can now be banked even when dropped freight is under the gaze cone at the counter. Partial/empty satchels can still collect nearby dropped freight first. The focus marker and E prompt follow that same action choice. A scene regression drops a real relic at the counter, fills the satchel, banks successfully, and verifies the floor relic remains available.
+
+Carriage 00 prompts now direct the porter to its brass counter rather than telling them to return to the carriage they already occupy. Upgrade choices remain visible in the manifest while floor loot is targeted. Brief conductor grace is labeled as distraction, and teleport/capture clear stale proximity threat. Full validation passed, including all three scene seeds and the walking route. The return-counter view was inspected.
+
+Cloud graphical checks hit an X11 MIT-SHM access error after the execution transport changed. Restarting the task's dummy Xorg :99 with -extension MIT-SHM resolved it; the repeated capture is free of runtime errors. This is test-display configuration, not a game setting. The current server PID is 55178. Native Windows CI passed forest revision 5102c9f (40853527407), lantern alignment 099a808 (40854488305), and credits 81e2322 (40856990301). The counter revision still needs its own CI result. No final release has been declared.
