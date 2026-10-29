@@ -10,7 +10,7 @@ Four passenger commissions trade your tools for sealed fares and a different daw
 
 ![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
-[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png) · [The choir's one voice](docs/screenshots/choir.png) · [The porter's notebook](docs/screenshots/notebook.png).
+[Passing villages beyond the carriage windows](docs/screenshots/window-view.png) · [Planning at the switchboard](docs/screenshots/switchboard.png) · [The choir's one voice](docs/screenshots/choir.png) · [A traveler with a song](docs/screenshots/traveler.png) · [The porter's notebook](docs/screenshots/notebook.png).
 
 ## Playing
 
@@ -54,6 +54,6 @@ For an optional live-conductor balance diagnostic, run `godot --headless --fixed
 
 An optional Linux input check runs the exported executable through OS keyboard and mouse events: `python3 scripts/assess_native_input.py build/linux/TheMidnightExchange.x86_64 --display :99`. Use a dedicated X11 display with libX11, libXtst, `xprop` and `xwininfo` available. It creates an isolated profile and preserves screenshots, a log and a JSON result in a fresh temporary directory. The opt-in `--input-observer` reports game state without supplying actions or changing rules. The check boards, collects and banks one relic, upgrades, shunts, reads the ledger and quits through the menus. This is a short input-path check, not a full-run balance or FPS test. `--checkpoint-rendering` can reduce drawing on slow software displays; continuous rendering is the default.
 
-Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, `scripts/model_organ.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.
+Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, `scripts/model_organ.py`, `scripts/model_passengers.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.
 
 `python3 scripts/generate_audio.py` rebuilds the original score, effects and carriage ambience using the Python standard library. `scripts/generate_ambience.py` can rebuild just the room loops and morning theme.

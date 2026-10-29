@@ -3,6 +3,10 @@ extends Node3D
 ## Optional passenger commissions trade a relic for a sealed fare, banked at the exchange.
 
 const NAMES := ["THE ASTRONOMER", "THE ARCHIVIST", "THE SOLOIST", "THE LAST PASSENGER"]
+const FIGURES := [preload("res://assets/models/traveler_astronomer.glb"),
+	preload("res://assets/models/traveler_archivist.glb"),
+	preload("res://assets/models/traveler_soloist.glb"),
+	preload("res://assets/models/traveler_last.glb")]
 const NEEDS := [3, 0, 1, 2]
 const FARES := [75, 90, 95, 110]
 const REQUESTS := [
@@ -30,28 +34,18 @@ var caption: Label3D
 var elapsed := 0.0
 
 func _ready() -> void:
-	figure = preload("res://assets/models/passenger.glb").instantiate()
+	figure = FIGURES[identity].instantiate()
 	add_child(figure)
-	tint_figure(figure)
 	caption = Label3D.new()
 	caption.text = NAMES[identity]
 	caption.position.y = 2.62
+	caption.font = preload("res://assets/fonts/body.ttf")
 	caption.font_size = 22
+	caption.outline_size = 3
 	caption.pixel_size = 0.004
 	caption.modulate = Color("aed1c9")
 	caption.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	add_child(caption)
-
-func tint_figure(node: Node) -> void:
-	if node is MeshInstance3D:
-		for index in range(node.mesh.get_surface_count()):
-			var surface := node.mesh.surface_get_material(index) as StandardMaterial3D
-			if surface != null and "enamel" in surface.resource_name.to_lower():
-				var tinted := surface.duplicate() as StandardMaterial3D
-				tinted.albedo_color = [Color("35515e"), Color("554359"), Color("355c55"), Color("5b505d")][identity]
-				node.set_surface_override_material(index, tinted)
-	for child in node.get_children():
-		tint_figure(child)
 
 func _process(delta: float) -> void:
 	elapsed += delta

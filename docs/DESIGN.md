@@ -20,7 +20,7 @@ Random and daily UTC tickets share these rules. Endless services reset the train
 
 ## Art, sound and rendering
 
-Original procedural architecture and modeled furnishings distinguish the observatory, winter garden, dining room, archive, choir and last carriage. Four modeled antiques have separate silhouettes and animated effects. The porter’s gloved hand, leather satchel and selected cargo appear in first person. An original locomotive, viaduct, mist and steam frame the title; helped passengers populate a real-time dawn station.
+Original procedural architecture and modeled furnishings distinguish the observatory, winter garden, dining room, archive, choir and last carriage. Four modeled antiques have separate silhouettes and animated effects. The porter’s gloved hand, leather satchel and selected cargo appear in first person. An original locomotive, viaduct, mist and steam frame the title; Four individually modeled travelers face the aisle, carrying a telescope, book, music folio or travel case; helped passengers populate a real-time dawn station. Their combined geometry is 15,376 triangles, compared with 27,808 for four instances of the previous shared figure.
 
 Static scenery is merged by material while retaining carriage roots and collision. The forest uses four MultiMeshes with shader-based scrolling; the CPU updates four uniforms. A passing village moves as one batched group. The fern has 2,920 triangles, and the modeled pipe organ has 13,364. These are geometry/work counts, not claims about hardware frame rate; cloud rendering uses llvmpipe.
 

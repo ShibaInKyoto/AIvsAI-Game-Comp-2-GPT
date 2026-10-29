@@ -157,6 +157,7 @@ func build_world(ticket: int) -> void:
 		var passenger := MidnightPassenger.new()
 		passenger.identity = index
 		passenger.position = Vector3(-2.5, 0, -[1, 4, 5, 6][index] * MidnightTrain.LENGTH + 7)
+		passenger.rotation.y = PI / 2
 		world_root.add_child(passenger)
 		passengers.append(passenger)
 	conductor = MidnightConductor.new()
@@ -761,6 +762,12 @@ func capture_frame() -> void:
 		elif argument.begins_with("--capture-memory="):
 			to_title()
 			interface.show_memories(clampi(argument.get_slice("=", 1).to_int(), 0, 3))
+		elif argument.begins_with("--capture-passenger="):
+			var passenger := passengers[clampi(argument.get_slice("=", 1).to_int(), 0, 3)]
+			player.position = passenger.position + Vector3(2.3, 0.05, 1.0)
+			player.look_at(passenger.position + Vector3(0, 0.05, 0))
+			camera.rotation.x = -0.08
+			grace = 999
 	if "--capture-portrait" in OS.get_cmdline_user_args():
 		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))

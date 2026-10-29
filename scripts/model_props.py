@@ -116,9 +116,9 @@ RED_GLASS.node_tree.nodes.get('Principled BSDF').inputs['Emission Color'].defaul
 RED_GLASS.node_tree.nodes.get('Principled BSDF').inputs['Emission Strength'].default_value=.5
 
 
-def person(conductor=False):
+def build_conductor():
     clear()
-    cloth = COAT if conductor else TEAL
+    cloth = COAT
     for x in [-.15,.15]:
         box((x,-.05,.12),(.19,.37,.18),BLACK,.07)
         box((x,.01,.42),(.16,.2,.52),cloth,.045)
@@ -138,25 +138,20 @@ def person(conductor=False):
     sphere((0,-.015,1.98),(.18,.16,.23),MASK)
     for side in [-1,1]:
         sphere((side*.071,-.157,2.025),(.042,.015,.026),BLACK)
-    if conductor:
-        box((0,-.176,1.89),(.06,.015,.014),BLACK,.004)
+    box((0,-.176,1.89),(.06,.015,.014),BLACK,.004)
     cylinder((0,0,2.19),.34,.045,BLACK,32)
     cylinder((0,0,2.32),.205,.23,cloth,32,radius_top=.19)
     cylinder((0,0,2.24),.21,.05,GOLD,32)
-    if conductor:
-        # A handle over the lantern, and a glass core inside four brass rods.
-        tube_between((.37,-.22,1.02),(.48,-.24,.96),.025,GOLD)
-        box((.48,-.24,.78),(.24,.24,.3),RED_GLASS,.015)
-        for height in [.6,.96]:
-            box((.48,-.24,height),(.3,.3,.045),GOLD,.018)
-        for dx in [-.13,.13]:
-            for dy in [-.13,.13]:
-                tube_between((.48+dx,-.24+dy,.62),(.48+dx,-.24+dy,.94),.013,GOLD)
-    else:
-        box((0,-.27,1.06),(.28,.035,.18),GOLD,.012)
-        for x in [-.08,0,.08]:
-            box((x,-.292,1.06),(.008,.006,.1),BLACK,.001)
-    export('conductor' if conductor else 'passenger')
+    # A handle over the lantern, and a glass core inside four brass rods.
+    tube_between((.37,-.22,1.02),(.48,-.24,.96),.025,GOLD)
+    box((.48,-.24,.78),(.24,.24,.3),RED_GLASS,.015)
+    for height in [.6,.96]:
+        box((.48,-.24,height),(.3,.3,.045),GOLD,.018)
+    for dx in [-.13,.13]:
+        for dy in [-.13,.13]:
+            tube_between((.48+dx,-.24+dy,.62),(.48+dx,-.24+dy,.94),.013,GOLD)
+    export('conductor')
 
-person(True)
-person(False)
+build_conductor()
+from model_passengers import build_passengers
+build_passengers()

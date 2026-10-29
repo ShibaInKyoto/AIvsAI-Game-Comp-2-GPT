@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dkamt1il8ann0"
-path="res://.godot/imported/passenger.glb-7ce318223e8f610c72cc77252c3e9636.scn"
+uid="uid://c4iw07cow5lwn"
+path="res://.godot/imported/traveler_astronomer.glb-36a893631629490f9aff515a0fc581cb.scn"
 
 [deps]
 
-source_file="res://assets/models/passenger.glb"
-dest_files=["res://.godot/imported/passenger.glb-7ce318223e8f610c72cc77252c3e9636.scn"]
+source_file="res://assets/models/traveler_astronomer.glb"
+dest_files=["res://.godot/imported/traveler_astronomer.glb-36a893631629490f9aff515a0fc581cb.scn"]
 
 [params]
 
