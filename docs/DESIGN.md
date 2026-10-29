@@ -99,3 +99,12 @@ Folding, banking and capture now give a brief, muted color transition beneath th
 ## Winter-garden geometry
 
 Folded, ridged leaf meshes and simple curved stems replace the fern's dense beveled pieces. The urn and palette remain consistent. Per-model triangles fell from 48,504 to 2,920 (94.0%); GLB size fell from 1,879,816 to 167,376 bytes. This is an asset geometry/size measurement, not a hardware FPS claim. The new silhouette was inspected in the carriage; import, scene smoke and mixed-geometry batching checks passed. scripts/model_fern.py regenerates the fern independently and is reused by model_props.py. The gameplay screenshot shows the updated foliage. Event-feedback checkpoint 1ca898f passed native Windows CI (run 40844402023).
+
+
+## Passing villages and live-run assessment
+
+Ten original procedural houses pass outside the train among the trees. Their warm windows, gabled roofs and chimneys are combined into four material batches; only the group transform moves. They use the same travel speed as the forest and add no physics or player interactions. A garden-window capture was inspected. The full state/profile/geometry suites, three scene seeds and physical winning route passed with the new scenery. docs/.gdignore keeps documentation screenshots out of Godot's asset import scan.
+
+The exploratory live porter completed ticket 90210 with £655 and about 76 seconds remaining, surviving one capture under normal clock, pressure and upgrade rules. Other layouts exposed policy failures (poor return paths from cover, repeated evasions, and waiting for the conductor beyond his patrol boundary). A port of that controller into the game did not repeat the success reliably, so it was removed and is not a release gate. Temporary diagnostic source/logs remain at /tmp/midnight-journey.gd and /tmp/midnight-journey*.log in this cloud workspace. This is evidence that a live win is possible, not a claim of universal balance or human playtesting. Further controller work should return to the aisle before long travel, recover cleanly after capture, and account for patrol bounds and folded doorways.
+
+Foliage revision eaa8648 passed native Windows CI (run 40845682627). No final release has been declared.

@@ -18,6 +18,7 @@ var car_order: Array[int] = [0, 1, 2, 3, 4, 5, 6]
 var current_parent: Node3D
 var current_car := 0
 var signage: Array[Label3D] = []
+var village: Node3D
 
 func mat(hex: String, metal := 0.0, emission := 0.0) -> StandardMaterial3D:
 	var key := hex + str(metal) + str(emission)
@@ -271,9 +272,54 @@ func build_landscape() -> void:
 		star.position = Vector3(rng.randf_range(-220, 220), rng.randf_range(25, 100), rng.randf_range(-220, 60))
 		star.material_override = mat("b7d5dd", 0, 1.0)
 		add_child(star)
+	build_village()
+
+func build_village() -> void:
+	village = Node3D.new()
+	village.name = "PassingVillage"
+	village.position.z = -250
+	add_child(village)
+	current_parent = village
+	var walls := mat("30424a")
+	var roofs := mat("172530")
+	var trim := mat("5a6260")
+	var windows := mat("ffcd88", 0, 0.8)
+	for house in range(10):
+		var side := -1 if house % 2 == 0 else 1
+		var x := side * rng.randf_range(20, 38)
+		var z := -54.0 + house * 12 + rng.randf_range(-3, 3)
+		var width := rng.randf_range(5, 8)
+		var depth := rng.randf_range(6, 9)
+		var height := rng.randf_range(7.5, 10)
+		var base := -5.0
+		block(Vector3(x, base + height * 0.5, z), Vector3(width, height, depth), walls)
+		block(Vector3(x, base + 0.2, z), Vector3(width + 0.3, 0.4, depth + 0.3), trim)
+		var roof := MeshInstance3D.new()
+		var gable := PrismMesh.new()
+		gable.size = Vector3(width + 0.8, 2.8, depth + 0.8)
+		roof.mesh = gable
+		roof.position = Vector3(x, base + height + 1.35, z)
+		roof.material_override = roofs
+		village.add_child(roof)
+		block(Vector3(x + width * 0.25, base + height + 2.3, z - depth * 0.2), Vector3(0.7, 2.2, 0.8), trim)
+		for level in [0.3, 0.73]:
+			var y: float = base + height * level
+			for face in [-1, 1]:
+				for column in [-1, 0, 1]:
+					block(Vector3(x + column * width * 0.28, y, z + face * (depth * 0.5 + 0.03)), Vector3(0.9, 1.25, 0.05), windows)
+				for column in [-1, 1]:
+					block(Vector3(x + face * (width * 0.5 + 0.03), y, z + column * depth * 0.26), Vector3(0.05, 1.25, 0.9), windows)
+		block(Vector3(x, base + 1.2, z + depth * 0.5 + 0.07), Vector3(1.3, 2.4, 0.08), roofs)
+	# One movable group, four material batches; no physics or per-window updates.
+	batch_geometry(village)
+	current_parent = null
 
 func _process(delta: float) -> void:
 	elapsed += delta
+	if village != null:
+		village.position.z += delta * 15
+		if village.position.z > 340:
+			village.position.z -= 900
 	for index in range(forest_positions.size()):
 		forest_positions[index].z += delta * 15
 		if forest_positions[index].z > 60:

@@ -678,6 +678,13 @@ func capture_frame() -> void:
 	if "--capture-portrait" in OS.get_cmdline_user_args():
 		player.position = passengers[0].position + Vector3(1.8, 0.05, 0.8)
 		player.look_at(passengers[0].position + Vector3(0, 0.05, 0))
+	if "--capture-window" in OS.get_cmdline_user_args():
+		var window_z := -train.car_order.find(2) * MidnightTrain.LENGTH + 2.8
+		train.village.position.z = window_z + 42
+		train.set_process(false)
+		player.position = Vector3(0, 0.05, window_z)
+		player.rotation.y = -PI / 2
+		visited[2] = true
 	if "--capture-inventory" in OS.get_cmdline_user_args():
 		run.capacity = 4
 		for kind in range(4):

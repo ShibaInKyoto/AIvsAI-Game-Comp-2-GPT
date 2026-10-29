@@ -8,6 +8,8 @@ You owe the conductor £600. Explore seven art-deco carriages, decide which reli
 
 ![The winter garden and freight manifest](docs/screenshots/night-service.png)
 
+[Passing villages beyond the carriage windows](docs/screenshots/window-view.png).
+
 ## Playing
 
 Verified development ZIPs are attached to successful [native build runs](https://github.com/ShibaInKyoto/AIvsAI-Game-Comp-2-GPT/actions/workflows/build.yml). The final competition build will also appear in Releases. Download the Windows ZIP, extract it, and open **TheMidnightExchange.exe**. The game is standalone: no browser, engine installation, account, network connection or paid asset is required. Read [the player guide](PLAYER_GUIDE.md) for controls and strategies.
