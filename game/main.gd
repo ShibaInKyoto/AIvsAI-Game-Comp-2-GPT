@@ -664,6 +664,12 @@ func capture_frame() -> void:
 		refresh_route()
 	if "--capture-title" in OS.get_cmdline_user_args():
 		to_title()
+	if "--capture-settings" in OS.get_cmdline_user_args() or "--capture-credits" in OS.get_cmdline_user_args():
+		to_title()
+		if "--capture-credits" in OS.get_cmdline_user_args():
+			interface.show_credits()
+		else:
+			interface.show_settings()
 	if "--capture-car" in OS.get_cmdline_user_args():
 		player.position = Vector3(0, 0.1, -47)
 	for argument in OS.get_cmdline_user_args():

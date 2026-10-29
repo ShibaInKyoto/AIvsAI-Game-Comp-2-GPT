@@ -116,3 +116,7 @@ The forest keeps static instance transforms and passes each tree's original cent
 The frozen window view matches the previous forest presentation. A fresh Windows export rendered the moving/wrapping forest through Wine without errors; a fresh Linux export passed smoke. This is a reduction in CPU-side update work, not a measured claim about gaming-PC frame rate. Village revision bd0f709 passed native Windows CI (run 40851573858). The shader revision still needs its own pushed CI result. No final release has been declared.
 
 The conductor's light now attaches to the modeled body at the lantern's actual local position, so turning and bobbing carry the light with the hand. The positional chime uses that same world position. A conductor portrait was inspected and the encounter smoke passed after the change. The unused active flag was removed; threat behavior remains governed by patrol, hearing and grace.
+
+## Credits and menu consistency
+
+Settings now contains a credits/notices page with engine and font acknowledgments and the packaged license filenames. It preserves the originating title/pause mode, so returning and resuming work consistently. Settings navigation uses the same styled button helper as the main menu. Credits and settings layouts were rendered and inspected; scene smoke passed after the helper change.

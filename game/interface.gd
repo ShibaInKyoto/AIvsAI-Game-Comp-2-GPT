@@ -193,7 +193,7 @@ func clear_buttons() -> void:
 	settings_box.hide()
 	menu_buttons.show()
 
-func button(text: String, action: Callable) -> void:
+func button(text: String, action: Callable, target: Control = null) -> Button:
 	var item := Button.new()
 	item.text = text
 	item.custom_minimum_size = Vector2(440, 44)
@@ -210,8 +210,10 @@ func button(text: String, action: Callable) -> void:
 	hover.bg_color = Color("285360")
 	item.add_theme_stylebox_override("hover", hover)
 	item.add_theme_stylebox_override("focus", hover)
+	item.add_theme_stylebox_override("pressed", hover)
 	item.pressed.connect(action)
-	menu_buttons.add_child(item)
+	(target if target != null else menu_buttons).add_child(item)
+	return item
 
 func show_title(record: int, voyage_record := 0) -> void:
 	reset_guide()
@@ -286,13 +288,24 @@ func show_settings() -> void:
 			set_meta(key, value)
 			setting_changed.emit(key, value))
 		row.add_child(slider)
-	var back := Button.new()
-	back.text = "BACK"
-	back.custom_minimum_size.y = 40
-	back.pressed.connect(func():
-		if mode == "pause": show_pause()
-		else: show_title(best, best_long))
-	settings_box.add_child(back)
+	button("CREDITS & LICENSES", show_credits, settings_box)
+	button("BACK", settings_back, settings_box)
+
+func settings_back() -> void:
+	if mode == "pause":
+		show_pause()
+	else:
+		show_title(best, best_long)
+
+func show_credits() -> void:
+	# Keep the originating title/pause mode for consistent Back and Escape behavior.
+	reset_guide()
+	clear_buttons()
+	heading.text = "THE MIDNIGHT\nWORKSHOP"
+	subtitle.text = "An original game for the AIvsAI competition.\nCreated by Codex.\n\nModels, textures, icons, music and sound effects\nwere made for The Midnight Exchange.\n\nBuilt with Godot Engine 4.6.3 and DejaVu fonts."
+	guide_heading.text = "ACKNOWLEDGMENTS"
+	guide_body.text = "GODOT ENGINE\nMIT license. Copyright 2014–present Godot Engine contributors; 2007–2014 Juan Linietsky and Ariel Manzur.\n\nGODOT_LICENSE.txt contains the engine license. GODOT_THIRD_PARTY.txt contains its third-party notices.\n\nDEJAVU FONTS\nThe complete font notice is in FONT_LICENSE.txt.\n\nThese notices are included beside the executable in the game download."
+	button("BACK TO SETTINGS   →", show_settings)
 
 func show_result(run: MidnightRun, record: int, service := 0, total := 0, voyage_record := 0) -> void:
 	reset_guide()
