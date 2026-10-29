@@ -353,7 +353,7 @@ func update(run: MidnightRun, car: int, energy: float, threat: float, message: S
 	threat_label.text = "THE CONDUCTOR IS CLOSE  /  leave the aisle, hold Ctrl, keep quiet" if threat > 0.35 else ""
 	danger.color.a = threat * 0.16
 
-func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: MidnightRun, can_shunt := false) -> void:
+func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: MidnightRun, can_shunt := false, porter_slot := 0) -> void:
 	reset_guide()
 	mode = "route"
 	menu.show()
@@ -368,7 +368,7 @@ func show_route(train: MidnightTrain, freight: Array[MidnightFreight], run: Midn
 		for cargo in freight:
 			if not cargo.taken and clampi(roundi(-cargo.position.z / MidnightTrain.LENGTH), 0, 6) == slot:
 				remaining += 1
-		lines += "%02d   %-23s   %s\n" % [slot, train.car_name(slot).trim_prefix("THE "), "SANCTUARY" if slot == 0 else str(remaining) + " relics"]
+		lines += "%02d   %-23s   %s%s\n" % [slot, train.car_name(slot).trim_prefix("THE "), "SANCTUARY" if slot == 0 else str(remaining) + " relics", " [YOU]" if slot == porter_slot else ""]
 	subtitle.text = lines
 	guide_heading.text = "RESONANCE COUPLINGS"
 	guide_body.add_theme_font_size_override("font_size", 15)

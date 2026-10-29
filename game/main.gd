@@ -230,7 +230,7 @@ func _input(event: InputEvent) -> void:
 		else:
 			paused = true
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-			interface.show_route(train, freight, run, at_counter())
+			refresh_route()
 		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_ESCAPE and playing:
 		if paused:
@@ -270,6 +270,10 @@ func pause() -> void:
 	paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	interface.show_pause()
+
+func refresh_route() -> void:
+	var slot := clampi(roundi(-player.position.z / MidnightTrain.LENGTH), 0, 6)
+	interface.show_route(train, freight, run, at_counter(), slot)
 
 func resume() -> void:
 	paused = false
@@ -430,7 +434,7 @@ func shunt_carriages(first: int, second: int) -> void:
 	move_carriage_contents(changes)
 	grace = maxf(grace, 3)
 	sound.play("fold", 0.9)
-	interface.show_route(train, freight, run, true)
+	refresh_route()
 
 func fold_home() -> void:
 	if at_counter():
@@ -644,7 +648,7 @@ func capture_frame() -> void:
 		finish_run()
 	if "--capture-route" in OS.get_cmdline_user_args():
 		paused = true
-		interface.show_route(train, freight, run, at_counter())
+		refresh_route()
 	if "--capture-title" in OS.get_cmdline_user_args():
 		to_title()
 	if "--capture-car" in OS.get_cmdline_user_args():
@@ -712,7 +716,7 @@ func smoke_test() -> void:
 	verify(is_equal_approx(last_cargo.position.z, last_car_cargo_z + 90), "Timetable freight transfer failed")
 	var time_before_shunt := run.remaining
 	paused = true
-	interface.show_route(train, freight, run, true)
+	refresh_route()
 	(interface.route_buttons.get_child(0) as Button).grab_focus()
 	test_key(KEY_TAB, true)
 	verify(not paused and not interface.menu.visible, "Tab must close the route with a focused button")
@@ -797,7 +801,7 @@ func smoke_test() -> void:
 	verify(run.finished and not playing, "Run completion failed")
 	verify(interface.mode == "result", "Result UI failed")
 	verify(interface.guide_panel.visible and not interface.title_shade.visible, "Result epilogue must replace title presentation")
-	interface.show_route(train, freight, run, at_counter())
+	refresh_route()
 	verify(interface.mode == "route" and "relics" in interface.subtitle.text, "Route ledger failed")
 	interface.show_settings()
 	verify(interface.settings_box.visible, "Settings UI failed")
