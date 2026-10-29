@@ -47,4 +47,6 @@ In restricted cloud filesystems, set `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, and `XD
 
 Pushes build downloadable native artifacts. Version tags run both Linux and native Windows tests before GitHub Actions publishes a release. See [design and progress](docs/DESIGN.md).
 
+For an optional live-conductor balance diagnostic, run `godot --headless --fixed-fps 120 --path . --script scripts/assess_live.gd -- --qa-seed=20261029`. This porter knows the freight layout and uses ordinary movement, cover, folding and timetable costs. It changes no threat or economy rules. A failed heuristic run does not establish that a ticket is unwinnable; this diagnostic is separate from the deterministic build checks.
+
 Optional asset regeneration uses Blender 4.3: `blender --background --python scripts/model_props.py`, `scripts/model_relics.py`, `scripts/model_satchel.py`, or `scripts/model_locomotive.py`. The generators share `scripts/modeling.py`. The fern can also be regenerated alone with `blender --background --python scripts/model_fern.py`. Blender is not needed to build or play the game.

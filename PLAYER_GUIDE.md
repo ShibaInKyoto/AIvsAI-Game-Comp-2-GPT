@@ -41,6 +41,8 @@ The exchange is a sanctuary. The conductor cannot enter it. T moves the last car
 
 The chime comes from his position in the train. Turn your head or use headphones to hear his direction; the HUD also warns when he is near and when he hears you.
 
+Stay crouched as you leave cover, until the lantern is farther away. Standing up beside him can restart pursuit. If he is already walking away, quietly follow at a distance rather than waiting for him to complete another patrol.
+
 ## Tips
 
 Bank an early delivery for a free upgrade. A bell is worth more when the rest of your satchel is valuable. Save doorways for long journeys. The timetable changes the route without creating new freight; turning it repeatedly costs precious time. Sneaking is slower but helps you pass safely. You can finish a run even after a bad encounter.

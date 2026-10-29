@@ -140,3 +140,11 @@ Counter-interaction revision c37bb26 passed native Windows CI (run 40861278968).
 ## Switchboard readability
 
 The route ledger now gives each carriage a separate row, highlights the porter's current room and uses 48×34 arrow targets in place of 36×20 controls. Disabled, focused and pressed states use the game's palette. The ledger explicitly explains that planning pauses the clock while swapping still spends six seconds. Counter and read-only views were inspected, including the minimum 960×540 window. Scene smoke passed, including focused Tab input and an actual button-triggered swap with its exact time/pressure charge. The capture helper now refreshes the ledger after its requested camera position, so the screenshot's YOU marker corresponds to that room.
+
+## Reproducible live-conductor assessment
+
+scripts/assess_live.gd preserves the revised diagnostic porter outside the shipped game and deterministic build gate. It follows a receding patrol quietly, brakes before movement waypoints, stays crouched when leaving cover, and handles captures without abandoning a viable run. The input/save override does not alter time, pressure, starting grace, freight, movement speed or conductor rules. It knows the entire freight layout and prioritizes valuable carriages, so its results show possible routes rather than novice difficulty.
+
+The policy completed tickets 90210 (£717, 202.6s left), 37 (£632, 247.5s), 20261028 (£630, 226.4s), and 20261029 (£699, 235.4s). Each used normal banked-hour bonuses and finished with no captures; no bells were abandoned. The first three used the temporary controller before source cleanup; the daily ticket used the checked-in script path. This replaces the earlier unreliable center-aisle policy as the current assessment tool. It remains optional because heuristic failures do not establish that a ticket is impossible. No human playtest has been claimed.
+
+Native Windows CI passed the satchel revision 64a455a (run 40866572885) and switchboard revision a8f8218 (40867143462). No final release has been declared.
