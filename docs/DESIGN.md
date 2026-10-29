@@ -49,6 +49,8 @@ There are no runtime network services or package dependencies. Asset-generation 
 
 `scripts/assess_live.gd` is an optional, map-aware porter diagnostic using normal threat/economy rules. It demonstrates possible routes, not novice difficulty or universal balance. It is separate from the deterministic build gate. No human playtest has been claimed.
 
+`scripts/assess_native_input.py` runs an exported Linux executable on a dedicated X11 display through OS mouse/keyboard events. An opt-in observer in `game/debug/` reports state and captures screenshots; it supplies no input or rule changes. The driver uses isolated local data and selects the launched process's window. It checks boarding, a physical pickup and deposit, an upgrade, a paid switchboard click, the passenger page, focused Tab, pause, title and quit. Continuous rendering is the default; checkpoint rendering is an explicit software-display option. This short loop is separate from full-run balance and Windows CI.
+
 GitHub Actions exports Linux and Windows ZIPs and runs the packaged game on native Windows before allowing a tagged release. Local standalone tests and Windows-through-Wine tests supplement CI. Each revision needs its own successful run; earlier results do not certify a later build. See [the development log](DEVELOPMENT_LOG.md) for implementation checkpoints and measurements.
 
 ## Competition continuity

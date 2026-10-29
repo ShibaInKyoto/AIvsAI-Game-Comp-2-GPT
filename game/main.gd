@@ -89,6 +89,10 @@ func _ready() -> void:
 	interface.remembered = rescued_mask
 	interface.show_title(best, best_voyage)
 	build_title_world()
+	if "--input-observer" in OS.get_cmdline_user_args():
+		var probe := preload("res://game/debug/input_probe.gd").new()
+		probe.game = self
+		add_child(probe)
 	if "--soak-test" in OS.get_cmdline_user_args():
 		call_deferred("soak_test")
 	elif smoke:
