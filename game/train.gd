@@ -7,6 +7,7 @@ const COUNT := 7
 const NAMES := ["THE EXCHANGE", "THE OBSERVATORY", "THE WINTER GARDEN", "THE DINING ROOM", "THE ARCHIVE", "THE CHOIR", "THE LAST CARRIAGE"]
 var materials: Dictionary = {}
 var forest_meshes: Array[MultiMesh] = []
+var forest_materials: Array[ShaderMaterial] = []
 var forest_positions: Array[Vector3] = []
 var forest_heights: Array[float] = []
 var lamps: Array[OmniLight3D] = []
@@ -243,16 +244,21 @@ func build_landscape() -> void:
 		mesh.radial_segments = 7
 		var instances := MultiMesh.new()
 		instances.transform_format = MultiMesh.TRANSFORM_3D
+		instances.use_custom_data = true
 		instances.mesh = mesh
 		instances.instance_count = forest_positions.size()
 		forest_meshes.append(instances)
 		var forest := MultiMeshInstance3D.new()
 		forest.multimesh = instances
-		forest.material_override = mat(["111d2c", "142c35", "19373e", "20434a"][layer])
+		var surface := ShaderMaterial.new()
+		surface.shader = preload("res://game/forest.gdshader")
+		surface.set_shader_parameter("tint", Color(["111d2c", "142c35", "19373e", "20434a"][layer]))
+		forest_materials.append(surface)
+		forest.material_override = surface
 		forest.custom_aabb = AABB(Vector3(-110, -10, -180), Vector3(220, 45, 260))
 		forest.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(forest)
-	update_forest()
+	initialize_forest_instances()
 	var moon := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 6
@@ -320,13 +326,11 @@ func _process(delta: float) -> void:
 		village.position.z += delta * 15
 		if village.position.z > 340:
 			village.position.z -= 900
-	for index in range(forest_positions.size()):
-		forest_positions[index].z += delta * 15
-		if forest_positions[index].z > 60:
-			forest_positions[index].z -= 230
-	update_forest()
+	var scroll := fmod(elapsed * 15, 230)
+	for surface in forest_materials:
+		surface.set_shader_parameter("scroll", scroll)
 
-func update_forest() -> void:
+func initialize_forest_instances() -> void:
 	for index in range(forest_positions.size()):
 		var height := forest_heights[index]
 		for layer in range(4):
@@ -341,6 +345,7 @@ func update_forest() -> void:
 				center.y += [0.48, 0.68, 0.87][layer - 1] * height
 			var basis := Basis(Vector3.UP, index * 2.4 + layer * 0.5).scaled(scale)
 			forest_meshes[layer].set_instance_transform(index, Transform3D(basis, center))
+			forest_meshes[layer].set_instance_custom_data(index, Color(forest_positions[index].z, 0, 0, 0))
 
 static func seeded_order(ticket: int) -> Array[int]:
 	var order: Array[int] = [0, 1, 2, 3, 4, 5, 6]

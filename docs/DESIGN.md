@@ -108,3 +108,9 @@ Ten original procedural houses pass outside the train among the trees. Their war
 The exploratory live porter completed ticket 90210 with £655 and about 76 seconds remaining, surviving one capture under normal clock, pressure and upgrade rules. Other layouts exposed policy failures (poor return paths from cover, repeated evasions, and waiting for the conductor beyond his patrol boundary). A port of that controller into the game did not repeat the success reliably, so it was removed and is not a release gate. Temporary diagnostic source/logs remain at /tmp/midnight-journey.gd and /tmp/midnight-journey*.log in this cloud workspace. This is evidence that a live win is possible, not a claim of universal balance or human playtesting. Further controller work should return to the aisle before long travel, recover cleanly after capture, and account for patrol bounds and folded doorways.
 
 Foliage revision eaa8648 passed native Windows CI (run 40845682627). No final release has been declared.
+
+## Forest scrolling cost
+
+The forest keeps static instance transforms and passes each tree's original center through instance custom data. A world-space vertex shader wraps each complete tree along the same 230m route. The CPU now updates four scroll uniforms instead of rebuilding 400 layer transforms and updating 100 tree positions per frame. Tree basis/scale construction happens once. The fixed custom bounds include the full wrapped range.
+
+The frozen window view matches the previous forest presentation. A fresh Windows export rendered the moving/wrapping forest through Wine without errors; a fresh Linux export passed smoke. This is a reduction in CPU-side update work, not a measured claim about gaming-PC frame rate. Village revision bd0f709 passed native Windows CI (run 40851573858). The shader revision still needs its own pushed CI result. No final release has been declared.
